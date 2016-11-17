@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>P2P File Sharing</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <form>
+      <label for="file">Select file to share</label>
+      <input id="file" name="file" type="file">
+    </form>
+    <pre id="sharing-link"></pre>
+
+    <hr>
+
+    <form>
+      <label for="acceptance">Response from peer</label>
+      <textarea id="acceptance" name="acceptance" rows="8" cols="40"></textarea>
+      <button id="acceptance-submit">Start file transfer</button>
+    </form>
+
+    <script src="adapter.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
