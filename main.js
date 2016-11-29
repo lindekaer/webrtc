@@ -1,32 +1,12 @@
-
 /*
 -----------------------------------------------------------------------------------
 |
-| WebRTC Setup
+| Configs
 |
 -----------------------------------------------------------------------------------
 */
 
-var initializedCon = new RTCPeerConnection(iceConfig)
-var recievedCon = new RTCPeerConnection(iceConfig)
-var readyCon = new RTCPeerConnection(iceConfig)
-var initializedChannel
-var recievedChannel
-var readyChannel
-setUpPeerConnection(initializedCon)
-setUpPeerConnection(recievedCon)
-setUpPeerConnection(readyCon)
-setupReadyCon()
-var waitingOffer
-var readyOffer
-
-// DOM elements
-let generateBtn = document.querySelector('#generate-offer')
-let consumeBtn = document.querySelector('#consume-sdp')
-let sdp = document.querySelector('#sdp')
-let walkerBtn = document.querySelector('#consume-walker-offer')
-let showWalkerOffer = document.querySelector('#show-walker-offer')
-
+// Basic ICE config
 var iceConfig = {
   iceServers: [
     { url: 'stun:23.21.150.121' }
@@ -41,131 +21,88 @@ var mediaConstraints = {
   }
 }
 
-showWalkerOffer.addEventListener('click', function () {
-  printSdp(JSON.parse(readyOffer))
-})
-
-walkerBtn.addEventListener('click', function () {
-  var data = JSON.parse(sdp.value)
-  var answer = new RTCSessionDescription(data)
-  readyCon.setRemoteDescription(answer)
-})
-
-// Create offer for the initializedCon
-generateBtn.addEventListener('click', function () {
-  // setUpPeerConnection(initializedCon)
-
-  var dataChannel = initializedCon.createDataChannel('fun-channel')
-  // Setup handlers for the locally create channel
-  handleChannel(dataChannel)
-  initializedChannel = dataChannel
-
-  // Create the offer for a p2p connection
-  initializedCon.createOffer(handleOfferInit, function () {}, mediaConstraints)
-  initializedCon.onicecandidate = function (candidate) {
-    // When there are no more candidates...
-    if (candidate.candidate == null) {
-      // Print the offer in the DOM
-      printSdp(initializedCon.localDescription)
-    }
-  }
-})
-
-// Listener for comsune buttom
-consumeBtn.addEventListener('click', function () {
-  var data = JSON.parse(sdp.value)
-  var json = new RTCSessionDescription(data)
-  if (json.type === 'offer') {
-    // the data is an offer and will be set up on recievingCon
-    var offer = new RTCSessionDescription(data)
-    recievedCon.onicecandidate = function (candidate) {
-      if (candidate.candidate == null) {
-        printSdp(recievedCon.localDescription)
-      }
-    }
-    recievedCon.setRemoteDescription(offer, function () {
-      recievedCon.createAnswer(function (answer) {
-        recievedCon.setLocalDescription(answer)
-      }, function (err) {})
-    })
-  } else if (json.type === 'answer') {
-    // the data is an answer and will be set up on initializedCon
-    var answer = new RTCSessionDescription(data)
-    initializedCon.setRemoteDescription(answer)
-    // After this, the connection is established...
-  }
-})
-
 /*
 -----------------------------------------------------------------------------------
 |
-| Utility functions
+| Peer class
 |
 -----------------------------------------------------------------------------------
 */
 
-function handleChannel (channel) {
-  // Log new messages
-  channel.onmessage = function (msg) {
-    console.log('Getting data')
-    console.log(msg)
-    handleMessage(JSON.parse(msg.data), channel)
-    waitingOffer = msg.data
-  }
-  // Other events
-  channel.onerror = function (err) { console.log(err) }
-  channel.onclose = function () { console.log('Closed!') }
-  channel.onopen = function (evt) { console.log('Opened') }
+var Peer = {}
+
+Peer.start = function () {
+  this._uuid = generateUuid()
+  this.connectToServer()
 }
 
-function setUpPeerConnection (peerConnection) {
+Peer.connectToServer = function () {
+  this._socket = new window.WebSocket('ws://localhost:8080/socketserver')
+  this._socket.onopen = this.onSocketOpen.bind(this)
+  this._socket.onmessage = this.onSocketMessage.bind(this)
+}
+
+Peer.onSocketOpen = function () {
+  this._socket.send(JSON.stringify({
+    type: 'joining',
+    uuid: this._uuid
+  }))
+  this.init()
+}
+
+Peer.onSocketMessage = function (message) {
+  var data = JSON.parse(message.data)
+  if (data.payload.type === 'offer') {
+    this.consume(data.payload, data.uuid)
+  }
+}
+
+Peer.init = function () {
+  this._initializedCon = new RTCPeerConnection(iceConfig)
+  this._recievedCon = new RTCPeerConnection(iceConfig)
+  this._readyCon = new RTCPeerConnection(iceConfig)
+
+  this._initializedChannel
+  this._recievedChannel
+  this._readyChannel
+  this._waitingOffer
+  this._readyOffer
+
+  this.setupPeerConnection(this._initializedCon)
+  this.setupPeerConnection(this._recievedCon)
+  this.setupPeerConnection(this._readyCon)
+  this.setupReadyCon()
+  this.addDomEventHandlers()
+}
+
+Peer.setupPeerConnection = function (peerConnection) {
+  var self = this
   peerConnection.ondatachannel = function (evt) {
     var channel = evt.channel
-    recievedChannel = channel
+    self._recievedChannel = channel
     channel.onopen = function () {
       console.log('Im now open.')
       channel.send('Hi there')
     }
     channel.onmessage = function (msg) {
       console.log(msg)
-      handleMessage(JSON.parse(msg.data), channel)
+      self.handleMessage(JSON.parse(msg.data), channel)
     }
     channel.onerror = function (err) { console.log(err) }
     channel.onclose = function () { console.log('Closed!') }
-    channel.onopen = function (evt) { console.log('Opened'); channel.send(readyOffer) }
+    channel.onopen = function (evt) { console.log('Opened'); channel.send(self._readyOffer) }
   }
 }
 
-function setupReadyCon () {
-  var dataChannelReady = readyCon.createDataChannel('ready-channel')
-  // Setup handlers for the locally create channel
-  handleChannel(dataChannelReady)
-  // Config for a 'data-only' offer
-  var readyChannel = dataChannelReady
-  // Create the offer for a p2p connection
-  readyCon.createOffer(handleOfferReady, function () {}, mediaConstraints)
-  readyCon.onicecandidate = function (candidate) {
-    // When there are no more candidates...
-    if (candidate.candidate == null) {
-      // Print the offer in the DOM
-      console.log('Ready-offer: ', readyCon.localDescription)
-      readyOffer = JSON.stringify({
-        type: 'waiting',
-        data: readyCon.localDescription
-      })
-    }
-  }
-}
-
-function handleMessage (message, channel) {
+Peer.handleMessage = function (message, channel) {
   console.log(message)
   switch (message.type) {
     case 'waiting':
       console.log('waiting')
-      waitingOffer = JSON.stringify(message.data)
+      this._waitingOffer = JSON.stringify(message.data)
       break
     case 'walkerToMiddle':
-      initializedChannel.send(JSON.stringify({
+      this._initializedChannel.send(JSON.stringify({
         type: 'middleToNext',
         data: message.data
       }))
@@ -173,29 +110,180 @@ function handleMessage (message, channel) {
       break
     case 'middleToNext':
       var answer = new RTCSessionDescription(message.data)
-      readyCon.setRemoteDescription(answer)
+      this._readyCon.setRemoteDescription(answer)
       console.log('middleToNext')
       break
     case 'sendWaiting':
       console.log('sendWaiting')
-      channel.send(waitingOffer)
+      channel.send(this._waitingOffer)
       break
     default: console.log('No type: ')
   }
 }
 
-function handleOfferInit (offer) {
-  // Set local description
-  initializedCon.setLocalDescription(offer)
+Peer.setupReadyCon = function () {
+  var dataChannelReady = this._readyCon.createDataChannel('ready-channel')
+  // Setup handlers for the locally create channel
+  this.handleChannel(dataChannelReady)
+  // Config for a 'data-only' offer
+  var readyChannel = dataChannelReady
+  // Create the offer for a p2p connection
+  this._readyCon.createOffer(this.handleOfferReady.bind(this), function () {}, mediaConstraints)
+  this._readyCon.onicecandidate = this.handlerOnIceCandidate.bind(this)
 }
 
-function handleOfferReady (offer) {
-  // Set local description
-  readyCon.setLocalDescription(offer)
+Peer.handleChannel = function (channel) {
+  // Log new messages
+  channel.onmessage = function (msg) {
+    console.log('Getting data')
+    console.log(msg)
+    this.handleMessage(JSON.parse(msg.data), channel)
+    this._waitingOffer = msg.data
+  }
+  // Other events
+  channel.onerror = function (err) { console.log(err) }
+  channel.onclose = function () { console.log('Closed!') }
+  channel.onopen = function (evt) { console.log('Opened') }
 }
 
-function printSdp (sdp) {
+Peer.addDomEventHandlers = function () {
+  // DOM elements
+  var generateBtn = document.querySelector('#generate-offer')
+  var consumeBtn = document.querySelector('#consume-sdp')
+  var sdp = document.querySelector('#sdp')
+  var walkerBtn = document.querySelector('#consume-walker-offer')
+  var showWalkerOffer = document.querySelector('#show-walker-offer')
+
+  var self = this
+
+  showWalkerOffer.addEventListener('click', function () {
+    self.printSdp(JSON.parse(self._readyOffer))
+  })
+
+  walkerBtn.addEventListener('click', function () {
+    var data = JSON.parse(sdp.value)
+    var answer = new RTCSessionDescription(data)
+    self._readyCon.setRemoteDescription(answer)
+  })
+
+  // Create offer for the initializedCon
+  generateBtn.addEventListener('click', function () {
+    // setUpPeerConnection(initializedCon)
+
+    var dataChannel = self._initializedCon.createDataChannel('fun-channel')
+    // Setup handlers for the locally create channel
+    self.handleChannel(dataChannel)
+    self._initializedChannel = dataChannel
+
+    // Create the offer for a p2p connection
+    self._initializedCon.createOffer(self.handleOfferInit.bind(self), function () {}, mediaConstraints)
+    self._initializedCon.onicecandidate = function (candidate) {
+      // When there are no more candidates...
+      if (candidate.candidate == null) {
+        // Print the offer in the DOM
+        self.printSdp(self._initializedCon.localDescription)
+      }
+    }
+  })
+
+  // Listener for comsune buttom
+  consumeBtn.addEventListener('click', function () {
+    self.consume.bind(self, sdp.value)
+  })
+}
+
+Peer.handleOfferInit = function (offer) {
+  // Set local description
+  this._initializedCon.setLocalDescription(offer)
+}
+
+Peer.handleOfferReady = function (offer) {
+  // Set local description
+  this._readyCon.setLocalDescription(offer)
+}
+
+Peer.printSdp = function (sdp) {
   // Print it to the DOM
   var generatedOffer = document.querySelector('#generated-content')
   generatedOffer.innerHTML = JSON.stringify(sdp, null, 2)
+  // Send it to the server
+
+  var msg = {
+    data: sdp,
+    type: 'offer',
+    uuid: this._uuid
+  }
+  this._socket.send(JSON.stringify(msg, null, 2))
 }
+
+Peer.consume = function (data, offererUuid) {
+  var json = new RTCSessionDescription(data)
+  if (json.type === 'offer') {
+    // the data is an offer and will be set up on recievingCon
+    var offer = new RTCSessionDescription(data)
+    var self = this
+    self._recievedCon.onicecandidate = function (candidate) {
+      if (candidate.candidate == null) {
+        self.printSdp(self._recievedCon.localDescription)
+      }
+    }
+    self._recievedCon.setRemoteDescription(offer, function () {
+      self._recievedCon.createAnswer(function (answer) {
+        self._recievedCon.setLocalDescription(answer)
+        self._socket.send(JSON.stringify({
+          type: 'answer',
+          payload: answer,
+          uuid: offererUuid
+        }))
+      }, function (err) {})
+    })
+  } else if (json.type === 'answer') {
+    // the data is an answer and will be set up on initializedCon
+    var answer = new RTCSessionDescription(data)
+    self._initializedCon.setRemoteDescription(answer)
+    // After this, the connection is established...
+  }
+}
+
+Peer.handlerOnIceCandidate = function (candidate) {
+  // When there are no more candidates...
+  if (candidate.candidate == null) {
+    // Print the offer in the DOM
+    // console.log('Ready-offer: ', readyCon.localDescription)
+    this._readyOffer = JSON.stringify({
+      type: 'waiting',
+      data: this._readyCon.localDescription
+    })
+  }
+}
+
+/*
+-----------------------------------------------------------------------------------
+|
+| Utils
+|
+-----------------------------------------------------------------------------------
+*/
+
+function generateUuid () {
+  var d = new Date().getTime()
+  if (window.performance && typeof window.performance.now === 'function') {
+    d += window.performance.now() // use high-precision timer if available
+  }
+  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (d + Math.random() * 16) % 16 | 0
+    d = Math.floor(d / 16)
+    return (c === 'x' ? r : (r&0x3 | 0x8)).toString(16)
+  })
+  return uuid
+}
+
+/*
+-----------------------------------------------------------------------------------
+|
+| Bootstrap application
+|
+-----------------------------------------------------------------------------------
+*/
+
+Peer.start()
