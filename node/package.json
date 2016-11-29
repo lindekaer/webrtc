@@ -1,0 +1,28 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "chokidar 'src/*.js' -c 'npm run transpile'",
+    "transpile": "babel src --out-dir dist"
+  },
+  "babel": {
+    "presets": [
+      "es2015-node",
+      "stage-0"
+    ]
+  },
+  "author": "Theodor C. Listov Lindekaer <theodor.lindekaer@gmail.com> (https://lindekaer.github.io)",
+  "license": "ISC",
+  "dependencies": {
+    "babel": "6.5.2",
+    "babel-cli": "6.18.0",
+    "node-uuid": "1.4.7",
+    "uws": "0.11.1",
+    "wrtc": "0.0.61"
+  },
+  "devDependencies": {
+    "chokidar-cli": "1.2.0"
+  }
+}
