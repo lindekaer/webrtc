@@ -2,10 +2,6 @@
 
 var _wrtc = require('wrtc');
 
-var _wrtc2 = _interopRequireDefault(_wrtc);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /*
 -----------------------------------------------------------------------------------
 |
@@ -14,15 +10,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 -----------------------------------------------------------------------------------
 */
 
-const pc1 = new _wrtc2.default.RTCPeerConnection(); /*
-                                                    -----------------------------------------------------------------------------------
-                                                    |
-                                                    | Imports
-                                                    |
-                                                    -----------------------------------------------------------------------------------
-                                                    */
+// Setup of P2P connection and data channel
+const pc1 = new _wrtc.RTCPeerConnection(); /*
+                                           -----------------------------------------------------------------------------------
+                                           |
+                                           | Imports
+                                           |
+                                           -----------------------------------------------------------------------------------
+                                           */
 
-const dataChannel = pc1.createDataChannel();
+const dc = pc1.createDataChannel();
+
+// Add event handlers on data channel
+dc.onopen = () => console.log('Peer 1: Data channel is open!');
+dc.onmessage = event => console.log(`Peer 1: Got message: "${ event.data }"`);
 
 var errorHandler = function (err) {
   console.error(err);
@@ -33,15 +34,20 @@ var options = {
   offerToReceiveVideo: false
 };
 
-pc1.createOffer(function (offer) {
-  console.log('Offer done!');
-  pc1.setLocalDescription(offer, function () {
-    console.log('Desc set!');
+// Create an offer with the specified options
+pc1.createOffer(offer => {
+  // Set the offer as the local description
+  pc1.setLocalDescription(offer, () => {
+    console.log('Peer 1: Setting local description');
   }, errorHandler);
 }, errorHandler, options);
 
-pc1.onicecandidate = function (event) {
+// Event handler for candidates
+pc1.onicecandidate = event => {
+  console.log('Peer 1: Found an ICE candidate!');
+  // This fires when no more candidates are to be found
   if (event.candidate === null) {
+    // Send offer to Peer2
     sendOffer(pc1.localDescription);
   }
 };
@@ -54,24 +60,32 @@ pc1.onicecandidate = function (event) {
 -----------------------------------------------------------------------------------
 */
 
-const pc2 = new _wrtc2.default.RTCPeerConnection();
+// Setup of P2P connection
+const pc2 = new _wrtc.RTCPeerConnection();
 
 function sendOffer(offer) {
+  // Set the offer from Peer1 as remote description
   pc2.setRemoteDescription(offer);
-  console.log('Peer2: Set remote desc');
-  pc2.createAnswer(function (answer) {
-    console.log('Peer2: Created answer');
-    pc2.setLocalDescription(answer, function () {
-      console.log('Peer2: Set local description');
-    }, errorHandler);
+  // Create an answer
+  pc2.createAnswer(answer => {
+    // Set the answer as the local description
+    pc2.setLocalDescription(answer, () => {}, errorHandler);
   }, errorHandler);
 }
 
-pc2.onicecandidate = function (event) {
-  console.log('Get candiate on peer2!');
+pc2.onicecandidate = event => {
+  console.log('Peer 2: Found an ICE candidate!');
+  // This fires when no more candidates are to be found
   if (event.candidate === null) {
-    send(pc2.localDescription);
+    // Send offer to Peer1
+    sendAnswer(pc2.localDescription);
   }
 };
 
-sendAnswer(answer);
+function sendAnswer(answer) {
+  pc1.setRemoteDescription(answer);
+}
+
+pc2.ondatachannel = event => {
+  event.channel.send('The zebra is superior at playing the violin, word.');
+};

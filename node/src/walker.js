@@ -19,7 +19,7 @@ import config from './config'
 -----------------------------------------------------------------------------------
 */
 
-class Peer {
+class WalkerPeer {
   constructor () {
     this._uuid = uuid.v1()
     this.connectToServer()
@@ -33,7 +33,7 @@ class Peer {
 
   onSocketOpen () {
     const msg = JSON.stringify({
-      type: 'joining',
+      type: 'walker-request',
       uuid: this._uuid
     })
     this._socket.send(msg)
@@ -41,71 +41,29 @@ class Peer {
   }
 
   onSocketMessage (message) {
-    console.log('---------------------')
-    console.log(message)
-    console.log('---------------------')
-    const msg = JSON.parse(message)
-    if (msg.type === 'offer') {
-      this.consume('offer', msg.payload, msg.uuid)
-    }
-    if (msg.type === 'answer') {
-      this.consume('answer', msg.payload)
-    }
-    if (msg.type === 'walker-request') {
-      this._socket.send(this._readyOffer)
-    }
-    if (msg.type === 'walker-request-answer') {
-      this.connectWalker(msg.payload)
-    }
+    this.consume(message)
   }
 
   init () {
-    this._initializedCon = new webrtc.RTCPeerConnection(config.iceConfig)
-    this._recievedCon = new webrtc.RTCPeerConnection(config.iceConfig)
-    this._readyCon = new webrtc.RTCPeerConnection(config.iceConfig)
-
-    this._initializedChannel
-    this._recievedChannel
-    this._readyChannel
-
-    this._readyOffer
-
-    this.setupPeerConnection(this._initializedCon)
-    this.setupPeerConnection(this._recievedCon)
-    this.setupPeerConnection(this._readyCon)
-    this.setupReadyCon()
-    this.createOffer()
+    this._currentCon = new webrtc.RTCPeerConnection(config.iceConfig)
+    this._nextCon
+    this._nodeCount = 0
   }
 
-  setupPeerConnection (peerConnection) {
-    peerConnection.ondatachannel = (evt) => {
-      var channel = evt.channel
-      this._recievedChannel = channel
-      channel.onopen = () => {
-        // channel.send('connected')
-      }
-    }
-  }
-
-  async setupReadyCon () {
+  async consume (rawMessage) {
     try {
-      const dataChannelReady = this._readyCon.createDataChannel('ready-data-channel')
-      // Setup handlers for the locally create channel
-      dataChannelReady.onmessage = (message) => {
-        this.handleChannelMessage(message, dataChannelReady)
-      }
-      // Config for a 'data-only' offer
-      this._readyChannel = dataChannelReady
-      // Create the offer for a p2p connection
-      const offer = await this._readyCon.createOffer()
-      await this._readyCon.setLocalDescription(offer)
-      this._readyCon.onicecandidate = (candidate) => {
+      const message = JSON.parse(rawMessage)
+      const offer = new webrtc.RTCSessionDescription(message)
+      this.handleDataChannels(this._currentCon)
+      await this._currentCon.setRemoteDescription(offer)
+      const answer = await this._currentCon.createAnswer()
+      this._currentCon.setLocalDescription(answer)
+      this._currentCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {
-          this._readyOffer = JSON.stringify({
-            type: 'walker-request-offer',
-            payload: this._readyCon.localDescription,
-            uuid: this._uuid
-          })
+          this._socket.send(JSON.stringify({
+            type: 'walker-request-answer',
+            payload: this._currentCon.localDescription
+          }))
         }
       }
     } catch (err) {
@@ -113,97 +71,69 @@ class Peer {
     }
   }
 
-  connectWalker (sdp) {
-    this._readyCon.setRemoteDescription(sdp)
-  }
-
-  async createOffer () {
-    try {
-      // Create data channel
-      const dataChannel = this._initializedCon.createDataChannel('data-channel')
-      dataChannel.onmessage = (message) => {
-        this.handleChannelMessage(message, dataChannel)
-      }
-      this._initializedChannel = dataChannel
-
-      // Create the offer for a P2P connection
-      const offer = await this._initializedCon.createOffer()
-      await this._initializedCon.setLocalDescription(offer)
-      this._initializedCon.onicecandidate = (candidate) => {
-        if (candidate.candidate == null) {
-          const msg = JSON.stringify({
-            type: 'offer',
-            payload: this._initializedCon.localDescription,
-            uuid: this._uuid
-          })
-          this._socket.send(msg)
-        }
-      }
-    } catch (err) {
-      console.log(err)
-    }
-  }
-
-  async consume (type, sdp, inputUuid) {
-    try {
-      if (type === 'offer') {
-        const offer = new webrtc.RTCSessionDescription(sdp)
-        await this._recievedCon.setRemoteDescription(offer)
-        const answer = await this._recievedCon.createAnswer()
-        this._recievedCon.setLocalDescription(answer)
-        this._recievedCon.onicecandidate = (candidate) => {
+  handleDataChannels (peerConnection) {
+    peerConnection.ondatachannel = function (event) {
+      const channel = event.channel
+      channel.onmessage = function (msg) {
+        const data = JSON.parse(msg)
+        const offer = new webrtc.RTCSessionDescription(data.payload)
+        this._currentCon = this._nextCon
+        this._nextCon = new webrtc.RTCPeerConnection(config.iceConfig)
+        this.handleDataChannels(this._nextCon)
+        this._nextCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
-            this._socket.send(JSON.stringify({
-              type: 'answer',
-              payload: this._recievedCon.localDescription,
-              uuid: inputUuid
-            }))
+            channel.send(JSON.stringify({ type: 'walker-to-middle', payload: this._nextCon.localDescription }))
           }
         }
-      } else if (type === 'answer') {
-        const answer = new webrtc.RTCSessionDescription(sdp)
-        this._initializedCon.setRemoteDescription(answer)
+        this._nextCon.setRemoteDescription(offer, function () {
+          this._nextCon.createAnswer(function (answer) {
+            this._nextCon.setLocalDescription(answer)
+          }, function (err) {})
+        })
       }
-    } catch (err) {
-      console.log(err)
-    }
-  }
 
-  handleChannelMessage (message, channel) {
-    switch (message.data) {
-      case 'waiting':
-        console.log('waiting')
-        this._waitingOffer = JSON.stringify(message.data)
-        break
-      case 'walkerToMiddle':
-        this._initializedChannel.send(JSON.stringify({
-          type: 'middleToNext',
-          data: message.data
-        }))
-        break
-      case 'middleToNext':
-        var answer = new webrtc.RTCSessionDescription(message.data)
-        this._readyCon.setRemoteDescription(answer)
-        console.log('middleToNext')
-        break
-      case 'sendWaiting':
-        console.log('sendWaiting')
-        channel.send(this._waitingOffer)
-        break
-      case 'chat':
-        console.log(`FROM (${message.uuid}): ${message.payload}`)
-        break
-      default: console.log('No type: ')
+      channel.onerror = function (err) { console.log(err) }
+      channel.onclose = function () { console.log('Closed!') }
+      channel.onopen = function (evt) {
+        this._nodeCount++
+        console.log('Connection established to node ' + this._nodeCount + ' @ ' + Date.now())
+        channel.send(JSON.stringify({type: 'sendWaiting'}))
+      }
     }
   }
 }
 
-const newPeer = new Peer()
-console.log('My ID is: ' + newPeer._uuid)
+const newPeer = new WalkerPeer()
+console.log('I am a walker and my ID is: ' + newPeer._uuid)
 
 // Peer.init = function () {
 
-
+// Peer.handleMessage = function (message, channel) {
+//   console.log(message)
+//   switch (message.type) {
+//     case 'waiting':
+//       console.log('waiting')
+//       this._waitingOffer = JSON.stringify(message.data)
+//       break
+//     case 'walkerToMiddle':
+//       this._initializedChannel.send(JSON.stringify({
+//         type: 'middleToNext',
+//         data: message.data
+//       }))
+//       console.log('walkerToMiddle')
+//       break
+//     case 'middleToNext':
+//       var answer = new RTCSessionDescription(message.data)
+//       this._readyCon.setRemoteDescription(answer)
+//       console.log('middleToNext')
+//       break
+//     case 'sendWaiting':
+//       console.log('sendWaiting')
+//       channel.send(this._waitingOffer)
+//       break
+//     default: console.log('No type: ')
+//   }
+// }
 
 // Peer.setupReadyCon = function () {
 //   var dataChannelReady = this._readyCon.createDataChannel('ready-channel')

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "watch": "chokidar 'src/*.js' -c 'npm run transpile'",
-    "transpile": "babel src --out-dir dist"
+    "transpile": "babel src --out-dir dist",
+    "test": "npm run transpile && node dist/run.js 3"
   },
   "babel": {
     "presets": [
@@ -16,6 +17,7 @@
   "author": "Theodor C. Listov Lindekaer <theodor.lindekaer@gmail.com> (https://lindekaer.github.io)",
   "license": "ISC",
   "dependencies": {
+    "async": "2.1.4",
     "babel": "6.5.2",
     "babel-cli": "6.18.0",
     "node-uuid": "1.4.7",
