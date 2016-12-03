@@ -91,31 +91,29 @@ class WalkerPeer {
   }
 
   handleDataChannels(peerConnection) {
-    peerConnection.ondatachannel = function (event) {
+    peerConnection.ondatachannel = event => {
       const channel = event.channel;
-      channel.onmessage = function (msg) {
-        console.log('****');
-        console.log(typeof msg);
-        console.log(msg);
-        console.log('****');
+      channel.onmessage = msg => {
         const data = JSON.parse(msg.data);
-        const offer = new _wrtc2.default.RTCSessionDescription(data.payload);
+        const offer = new _wrtc2.default.RTCSessionDescription(data);
         this._currentCon = this._nextCon;
         this._nextCon = new _wrtc2.default.RTCPeerConnection(_config2.default.iceConfig);
         this.handleDataChannels(this._nextCon);
-        this._nextCon.onicecandidate = function (candidate) {
+
+        this._nextCon.setRemoteDescription(offer, () => {
+          this._nextCon.createAnswer(answer => {
+            this._nextCon.setLocalDescription(answer);
+          }, err => {});
+        }, err => {});
+        this._nextCon.onicecandidate = candidate => {
           if (candidate.candidate == null) {
             channel.send(JSON.stringify({ type: 'walker-to-middle', payload: this._nextCon.localDescription }));
           }
         };
-        this._nextCon.setRemoteDescription(offer, function () {
-          this._nextCon.createAnswer(function (answer) {
-            this._nextCon.setLocalDescription(answer);
-          }, function (err) {});
-        });
       };
 
       channel.onopen = evt => {
+        this._nodeCount++;
         console.log('Walker channel has opened');
         console.log('Connection established to node ' + this._nodeCount + ' @ ' + Date.now());
         channel.send(JSON.stringify({ type: 'send-waiting' }));

@@ -81,6 +81,9 @@ class Peer {
       channel.onopen = () => {
         channel.send(this._readyOffer)
       }
+      channel.onmessage = (message) => {
+        this.handleChannelMessage(message)
+      }
     }
   }
 
@@ -174,13 +177,13 @@ class Peer {
         console.log('waiting')
         this._waitingOffer = JSON.stringify(message.payload)
         break
-      case 'walkerToMiddle':
+      case 'walker-to-middle':
         this._initializedChannel.send(JSON.stringify({
-          type: 'middleToNext',
-          data: message.data
+          type: 'middle-to-next',
+          data: message.payload
         }))
         break
-      case 'middleToNext':
+      case 'middle-to-next':
         var answer = new webrtc.RTCSessionDescription(message.data)
         this._readyCon.setRemoteDescription(answer)
         console.log('middleToNext')
