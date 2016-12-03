@@ -65,6 +65,6 @@ function onMessage(message) {
   }
 
   if (msg.type === 'walker-request-answer') {
-    firstPeer.send(msg);
+    firstPeer.send(JSON.stringify(msg));
   }
 }

@@ -41,9 +41,6 @@ class Peer {
   }
 
   onSocketMessage (message) {
-    console.log('---------------------')
-    console.log(message)
-    console.log('---------------------')
     const msg = JSON.parse(message)
     if (msg.type === 'offer') {
       this.consume('offer', msg.payload, msg.uuid)

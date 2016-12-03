@@ -21,33 +21,27 @@ var peers = {}
 var offers = []
 
 wss.on('connection', (ws) => {
-  // Send latest offer to new peer
-  console.log('--- OFFER ----')
-  console.log(offers[0])
-  console.log(typeof offers[0])
-  console.log('---------------------')
-  if (offers.length !== 0) ws.send(JSON.stringify(offers.shift()))
+  // If there are any offers, send the first-received to the connecting peer
+  if (offers.length !== 0) {
+    console.log('Sending offer...')
+    ws.send(JSON.stringify(offers.shift()))
+  }
 
   ws.on('message', onMessage)
 })
 
 function onMessage (message) {
-  message = JSON.parse(message)
+  const msg = JSON.parse(message)
 
-  if (message.type === 'joining') {
-    peers[message.uuid] = this
+  if (msg.type === 'joining') {
+    peers[msg.uuid] = this
   }
 
-  if (message.type === 'offer') {
-    offers.push({ payload: message.data, uuid: message.uuid })
+  if (msg.type === 'offer') {
+    offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
   }
 
-  if (message.type === 'answer') {
-    console.log('****')
-    console.log(message)
-    console.log('****')
-    peers[message.uuid].send(JSON.stringify({ payload: message.payload }))
+  if (msg.type === 'answer') {
+    peers[msg.uuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }))
   }
-
-  console.log(message)
 }
