@@ -8,7 +8,7 @@
 
 import webrtc from 'wrtc'
 import WebSocket from 'uws'
-import uuid from 'node-uuid'
+import uuid from 'uuid'
 import config from './config'
 
 /*
@@ -79,7 +79,7 @@ class Peer {
       var channel = evt.channel
       this._recievedChannel = channel
       channel.onopen = () => {
-        // channel.send('connected')
+        channel.send(this._readyOffer)
       }
     }
   }
@@ -87,7 +87,7 @@ class Peer {
   async setupReadyCon () {
     try {
       const dataChannelReady = this._readyCon.createDataChannel('ready-data-channel')
-      // Setup handlers for the locally create channel
+      // Setup handlers for the locally created channel
       dataChannelReady.onmessage = (message) => {
         this.handleChannelMessage(message, dataChannelReady)
       }
@@ -166,11 +166,13 @@ class Peer {
     }
   }
 
-  handleChannelMessage (message, channel) {
-    switch (message.data) {
-      case 'waiting':
+  handleChannelMessage (channelMessage, channel) {
+    const channelMessageData = channelMessage.data
+    var message = JSON.parse(channelMessageData)
+    switch (message.type) {
+      case 'walker-request-offer':
         console.log('waiting')
-        this._waitingOffer = JSON.stringify(message.data)
+        this._waitingOffer = JSON.stringify(message.payload)
         break
       case 'walkerToMiddle':
         this._initializedChannel.send(JSON.stringify({
@@ -183,7 +185,7 @@ class Peer {
         this._readyCon.setRemoteDescription(answer)
         console.log('middleToNext')
         break
-      case 'sendWaiting':
+      case 'send-waiting':
         console.log('sendWaiting')
         channel.send(this._waitingOffer)
         break
@@ -197,10 +199,6 @@ class Peer {
 
 const newPeer = new Peer()
 console.log('My ID is: ' + newPeer._uuid)
-
-// Peer.init = function () {
-
-
 
 // Peer.setupReadyCon = function () {
 //   var dataChannelReady = this._readyCon.createDataChannel('ready-channel')
@@ -305,34 +303,3 @@ console.log('My ID is: ' + newPeer._uuid)
 //     })
 //   }
 // }
-
-// /*
-// -----------------------------------------------------------------------------------
-// |
-// | Utils
-// |
-// -----------------------------------------------------------------------------------
-// */
-
-// function generateUuid () {
-//   var d = new Date().getTime()
-//   if (window.performance && typeof window.performance.now === 'function') {
-//     d += window.performance.now() // use high-precision timer if available
-//   }
-//   var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-//     var r = (d + Math.random() * 16) % 16 | 0
-//     d = Math.floor(d / 16)
-//     return (c === 'x' ? r : (r&0x3 | 0x8)).toString(16)
-//   })
-//   return uuid
-// }
-
-// /*
-// -----------------------------------------------------------------------------------
-// |
-// | Bootstrap application
-// |
-// -----------------------------------------------------------------------------------
-// */
-
-// Peer.start()

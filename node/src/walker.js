@@ -8,7 +8,7 @@
 
 import webrtc from 'wrtc'
 import WebSocket from 'uws'
-import uuid from 'node-uuid'
+import uuid from 'uuid'
 import config from './config'
 
 /*
@@ -72,10 +72,14 @@ class WalkerPeer {
   }
 
   handleDataChannels (peerConnection) {
-    peerConnection.ondatachannel = function (event) {
+    peerConnection.ondatachannel = function (event) {      
       const channel = event.channel
       channel.onmessage = function (msg) {
-        const data = JSON.parse(msg)
+        console.log('****')
+        console.log(typeof msg)
+        console.log(msg)
+        console.log('****')
+        const data = JSON.parse(msg.data)
         const offer = new webrtc.RTCSessionDescription(data.payload)
         this._currentCon = this._nextCon
         this._nextCon = new webrtc.RTCPeerConnection(config.iceConfig)
@@ -92,12 +96,10 @@ class WalkerPeer {
         })
       }
 
-      channel.onerror = function (err) { console.log(err) }
-      channel.onclose = function () { console.log('Closed!') }
-      channel.onopen = function (evt) {
-        this._nodeCount++
+      channel.onopen = (evt) => {
+        console.log('Walker channel has opened')
         console.log('Connection established to node ' + this._nodeCount + ' @ ' + Date.now())
-        channel.send(JSON.stringify({type: 'sendWaiting'}))
+        channel.send(JSON.stringify({ type: 'send-waiting' }))
       }
     }
   }

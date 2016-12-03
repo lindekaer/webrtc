@@ -8,9 +8,9 @@ var _uws = require('uws');
 
 var _uws2 = _interopRequireDefault(_uws);
 
-var _nodeUuid = require('node-uuid');
+var _uuid = require('uuid');
 
-var _nodeUuid2 = _interopRequireDefault(_nodeUuid);
+var _uuid2 = _interopRequireDefault(_uuid);
 
 var _config = require('./config');
 
@@ -36,7 +36,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 
 class Peer {
   constructor() {
-    this._uuid = _nodeUuid2.default.v1();
+    this._uuid = _uuid2.default.v1();
     this.connectToServer();
   }
 
@@ -94,7 +94,7 @@ class Peer {
       var channel = evt.channel;
       this._recievedChannel = channel;
       channel.onopen = () => {
-        // channel.send('connected')
+        channel.send(this._readyOffer);
       };
     };
   }
@@ -105,7 +105,7 @@ class Peer {
     return _asyncToGenerator(function* () {
       try {
         const dataChannelReady = _this._readyCon.createDataChannel('ready-data-channel');
-        // Setup handlers for the locally create channel
+        // Setup handlers for the locally created channel
         dataChannelReady.onmessage = function (message) {
           _this.handleChannelMessage(message, dataChannelReady);
         };
@@ -193,11 +193,13 @@ class Peer {
     })();
   }
 
-  handleChannelMessage(message, channel) {
-    switch (message.data) {
-      case 'waiting':
+  handleChannelMessage(channelMessage, channel) {
+    const channelMessageData = channelMessage.data;
+    var message = JSON.parse(channelMessageData);
+    switch (message.type) {
+      case 'walker-request-offer':
         console.log('waiting');
-        this._waitingOffer = JSON.stringify(message.data);
+        this._waitingOffer = JSON.stringify(message.payload);
         break;
       case 'walkerToMiddle':
         this._initializedChannel.send(JSON.stringify({
@@ -210,7 +212,7 @@ class Peer {
         this._readyCon.setRemoteDescription(answer);
         console.log('middleToNext');
         break;
-      case 'sendWaiting':
+      case 'send-waiting':
         console.log('sendWaiting');
         channel.send(this._waitingOffer);
         break;
@@ -225,9 +227,6 @@ class Peer {
 
 const newPeer = new Peer();
 console.log('My ID is: ' + newPeer._uuid);
-
-// Peer.init = function () {
-
 
 // Peer.setupReadyCon = function () {
 //   var dataChannelReady = this._readyCon.createDataChannel('ready-channel')
@@ -331,34 +330,3 @@ console.log('My ID is: ' + newPeer._uuid);
 //     })
 //   }
 // }
-
-// /*
-// -----------------------------------------------------------------------------------
-// |
-// | Utils
-// |
-// -----------------------------------------------------------------------------------
-// */
-
-// function generateUuid () {
-//   var d = new Date().getTime()
-//   if (window.performance && typeof window.performance.now === 'function') {
-//     d += window.performance.now() // use high-precision timer if available
-//   }
-//   var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-//     var r = (d + Math.random() * 16) % 16 | 0
-//     d = Math.floor(d / 16)
-//     return (c === 'x' ? r : (r&0x3 | 0x8)).toString(16)
-//   })
-//   return uuid
-// }
-
-// /*
-// -----------------------------------------------------------------------------------
-// |
-// | Bootstrap application
-// |
-// -----------------------------------------------------------------------------------
-// */
-
-// Peer.start()

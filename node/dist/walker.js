@@ -8,9 +8,9 @@ var _uws = require('uws');
 
 var _uws2 = _interopRequireDefault(_uws);
 
-var _nodeUuid = require('node-uuid');
+var _uuid = require('uuid');
 
-var _nodeUuid2 = _interopRequireDefault(_nodeUuid);
+var _uuid2 = _interopRequireDefault(_uuid);
 
 var _config = require('./config');
 
@@ -36,7 +36,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 
 class WalkerPeer {
   constructor() {
-    this._uuid = _nodeUuid2.default.v1();
+    this._uuid = _uuid2.default.v1();
     this.connectToServer();
   }
 
@@ -94,7 +94,11 @@ class WalkerPeer {
     peerConnection.ondatachannel = function (event) {
       const channel = event.channel;
       channel.onmessage = function (msg) {
-        const data = JSON.parse(msg);
+        console.log('****');
+        console.log(typeof msg);
+        console.log(msg);
+        console.log('****');
+        const data = JSON.parse(msg.data);
         const offer = new _wrtc2.default.RTCSessionDescription(data.payload);
         this._currentCon = this._nextCon;
         this._nextCon = new _wrtc2.default.RTCPeerConnection(_config2.default.iceConfig);
@@ -111,16 +115,10 @@ class WalkerPeer {
         });
       };
 
-      channel.onerror = function (err) {
-        console.log(err);
-      };
-      channel.onclose = function () {
-        console.log('Closed!');
-      };
-      channel.onopen = function (evt) {
-        this._nodeCount++;
+      channel.onopen = evt => {
+        console.log('Walker channel has opened');
         console.log('Connection established to node ' + this._nodeCount + ' @ ' + Date.now());
-        channel.send(JSON.stringify({ type: 'sendWaiting' }));
+        channel.send(JSON.stringify({ type: 'send-waiting' }));
       };
     };
   }
