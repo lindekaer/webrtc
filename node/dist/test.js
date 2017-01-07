@@ -19,13 +19,15 @@ const pc1 = new _wrtc.RTCPeerConnection(); /*
                                            -----------------------------------------------------------------------------------
                                            */
 
+const pcx = new _wrtc.RTCPeerConnection();
 const dc = pc1.createDataChannel();
+const dcx = pcx.createDataChannel();
 
 // Add event handlers on data channel
 dc.onopen = () => console.log('Peer 1: Data channel is open!');
 dc.onmessage = event => console.log(`Peer 1: Got message: "${ event.data }"`);
 
-var errorHandler = function (err) {
+var errorHandler = function errorHandler(err) {
   console.error(err);
 };
 
@@ -51,6 +53,13 @@ pc1.onicecandidate = event => {
     sendOffer(pc1.localDescription);
   }
 };
+
+pcx.createOffer(offer => {
+  // Set the offer as the local description
+  pc1.setLocalDescription(offer, () => {
+    console.log('Peer x: Setting local description');
+  }, errorHandler);
+}, errorHandler, options);
 
 /*
 -----------------------------------------------------------------------------------
@@ -83,7 +92,7 @@ pc2.onicecandidate = event => {
 };
 
 function sendAnswer(answer) {
-  pc1.setRemoteDescription(answer);
+  pcx.setRemoteDescription(answer);
 }
 
 pc2.ondatachannel = event => {
