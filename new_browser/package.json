@@ -1,0 +1,34 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "chokidar 'src/*.js' -c 'npm run transpile && npm run bundle'",
+    "transpile": "babel src --out-dir dist",
+    "test": "npm run transpile && node dist/run.js 5",
+    "bundle": "browserify ./dist/peer.js -o ./dist/peer-bundled.js && browserify ./dist/walker.js -o ./dist/walker-bundled.js"
+  },
+  "babel": {
+    "presets": [
+      "es2015-node",
+      "stage-0"
+    ]
+  },
+  "author": "Theodor C. Listov Lindekaer <theodor.lindekaer@gmail.com> (https://lindekaer.github.io)",
+  "license": "ISC",
+  "dependencies": {
+    "async": "2.1.4",
+    "uuid": "3.0.1",
+    "uws": "0.11.1",
+    "wrtc": "0.0.61"
+  },
+  "devDependencies": {
+    "babel": "6.5.2",
+    "babel-cli": "6.18.0",
+    "babel-preset-es2015-node": "6.1.1",
+    "babel-preset-stage-0": "6.16.0",
+    "browserify": "^13.1.1",
+    "chokidar-cli": "1.2.0"
+  }
+}
