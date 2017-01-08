@@ -155,6 +155,8 @@ class Peer {
           }
           console.log('Offer created, sending')
           requestingChannel.send(jsonOffer)
+        } else {
+          
         }
       }
     } catch (err) {
