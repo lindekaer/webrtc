@@ -83,7 +83,7 @@ class WalkerPeer {
         _this._currentCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
             _this._socket.send(JSON.stringify({
-              type: 'walker-request-answer',
+              type: 'answer-from-walker',
               payload: _this._currentCon.localDescription,
               walkerId: _this._uuid
             }));
@@ -94,7 +94,7 @@ class WalkerPeer {
       }
     })();
   }
-
+  // 'walker-request-answer'
   handleDataChannels(peerConnection) {
     peerConnection.ondatachannel = event => {
       const channel = event.channel;
@@ -116,7 +116,7 @@ class WalkerPeer {
           if (candidate.candidate == null) {
             // console.log('Sending answer to node ' + this._nodeCount)
             channel.send(JSON.stringify({
-              type: 'walker-to-middle',
+              type: 'answer-from-walker-relay',
               payload: this._nextCon.localDescription,
               walkerId: this._uuid
             }));

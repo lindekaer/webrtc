@@ -69,7 +69,7 @@ class WalkerPeer {
       this._currentCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {
           this._socket.send(JSON.stringify({
-            type: 'walker-request-answer',
+            type: 'answer-from-walker',
             payload: this._currentCon.localDescription,
             walkerId: this._uuid
           }))
@@ -79,7 +79,7 @@ class WalkerPeer {
       console.log(err)
     }
   }
-
+// 'walker-request-answer'
   handleDataChannels (peerConnection) {
     peerConnection.ondatachannel = (event) => {
       const channel = event.channel
@@ -101,7 +101,7 @@ class WalkerPeer {
           if (candidate.candidate == null) {
             // console.log('Sending answer to node ' + this._nodeCount)
             channel.send(JSON.stringify({
-              type: 'walker-to-middle',
+              type: 'answer-from-walker-relay',
               payload: this._nextCon.localDescription,
               walkerId: this._uuid
             }))

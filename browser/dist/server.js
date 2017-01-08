@@ -71,7 +71,7 @@ function onMessage(message) {
     walker.send(JSON.stringify(msg.payload));
   }
 
-  if (msg.type === 'walker-request-answer') {
+  if (msg.type === 'answer-from-walker') {
     firstPeer.send(JSON.stringify(msg));
   }
 }
