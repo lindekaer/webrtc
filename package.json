@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "watch": "chokidar 'src/*.js' -c 'npm run transpile && npm run bundle && npm run inlineHtml'",
+    "watch": "chokidar 'src/*.js' -c 'npm run build'",
+    "build": "npm run transpile && npm run bundle && npm run inlineHtml",
     "transpile": "babel src --out-dir dist",
     "test": "npm run transpile && node dist/run.js 5",
     "inlineHtml": "inline-assets peer.html peer-inlined.html; inline-assets walker.html walker-inlined.html",
