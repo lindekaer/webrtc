@@ -25,7 +25,7 @@ const dc = pc1.createDataChannel();
 dc.onopen = () => console.log('Peer 1: Data channel is open!');
 dc.onmessage = event => console.log(`Peer 1: Got message: "${ event.data }"`);
 
-var errorHandler = function errorHandler(err) {
+var errorHandler = function (err) {
   console.error(err);
 };
 

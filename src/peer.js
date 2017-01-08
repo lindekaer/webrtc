@@ -57,6 +57,7 @@ class Peer {
     this._socket = new window.WebSocket(config.webSocketUrl)
     this._socket.onopen = this.onSocketOpen.bind(this)
     this._socket.onmessage = this.onSocketMessage.bind(this)
+    this._socket.onerror = err => console.log('Error in socket connection')
   }
 
   onSocketOpen () {
