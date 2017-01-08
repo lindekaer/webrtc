@@ -34,7 +34,6 @@ function onMessage (message) {
       console.log('setting first peer')
       firstPeer = this
     } else {
-      console.log('Lenght of peers: ', Object.keys(peers).length)
     }
     peers[msg.uuid] = this
      // If there are any offers, send the first-received to the connecting peer
@@ -59,11 +58,15 @@ function onMessage (message) {
     console.log('walker request')
     walker = this
     // Notify first peer about walker
-    firstPeer.send(JSON.stringify({ type: 'walker-request' }))
+    var mess = JSON.stringify({
+      type: 'request-offer-for-walker',
+      walkerId: msg.uuid
+    })
+    console.log('Now sending: ', mess)
+    firstPeer.send(mess)
   }
 
-  if (msg.type === 'walker-request-offer') {
-    console.log('sending offer to walker')
+  if (msg.type === 'offer-for-walker') {
     walker.send(JSON.stringify(msg.payload))
   }
 

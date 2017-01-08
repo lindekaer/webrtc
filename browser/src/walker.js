@@ -11,6 +11,13 @@
 import uuid from 'uuid'
 import config from './config'
 
+const Log = console.log
+console.log = (msg) => {
+  const data = Date.now() + ' - ' + msg
+  Log(data)
+  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
+}
+
 /*
 -----------------------------------------------------------------------------------
 |
@@ -63,7 +70,8 @@ class WalkerPeer {
         if (candidate.candidate == null) {
           this._socket.send(JSON.stringify({
             type: 'walker-request-answer',
-            payload: this._currentCon.localDescription
+            payload: this._currentCon.localDescription,
+            walkerId: this._uuid
           }))
         }
       }
@@ -76,6 +84,7 @@ class WalkerPeer {
     peerConnection.ondatachannel = (event) => {
       const channel = event.channel
       channel.onmessage = (msg) => {
+        // console.log('Recieved offer from node ' + this._nodeCount)
         const data = JSON.parse(msg.data)
         const offer = new RTCSessionDescription(data)
         this._currentCon = this._nextCon
@@ -88,17 +97,25 @@ class WalkerPeer {
           }, errorHandler)
         }, errorHandler)
         this._nextCon.onicecandidate = (candidate) => {
+          // console.log('Got candidate event')
           if (candidate.candidate == null) {
-            channel.send(JSON.stringify({ type: 'walker-to-middle', payload: this._nextCon.localDescription }))
+            // console.log('Sending answer to node ' + this._nodeCount)
+            channel.send(JSON.stringify({
+              type: 'walker-to-middle',
+              payload: this._nextCon.localDescription,
+              walkerId: this._uuid
+            }))
           }
         }
       }
 
       channel.onopen = (evt) => {
         this._nodeCount++
-        console.log('Walker channel has opened')
-        console.log('Connection established to node ' + this._nodeCount + ' @ ' + Date.now())
-        channel.send(JSON.stringify({ type: 'send-waiting' }))
+        console.log('Connection established to node ' + this._nodeCount)
+        channel.send(JSON.stringify({
+          type: 'get-offer-from-next-peer',
+          walkerId: this._uuid
+        }))
       }
     }
   }

@@ -1,6 +1,24 @@
 /*
 -----------------------------------------------------------------------------------
 |
+| Version notes
+|
+-----------------------------------------------------------------------------------
+*/
+/*
+  This version contains the first implementation of the jit creation
+  and delivery of a walker offer.
+
+  We have noticed that the ICE candidate collection is slow. The problem arise due to
+  it taking 10 seconds from the first and only candidate is found to the last candidate
+  event which is null, triggering the sending of the the offer.
+
+  The walker appears to be unaffected by the ice candidate null time delay problem.
+*/
+
+/*
+-----------------------------------------------------------------------------------
+|
 | Imports
 |
 -----------------------------------------------------------------------------------
@@ -10,6 +28,13 @@
 // import WebSocket from 'uws'
 import uuid from 'uuid'
 import config from './config'
+
+const Log = console.log
+console.log = (msg) => {
+  const data = Date.now() + ' - ' + msg
+  Log(data)
+  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
+}
 
 /*
 -----------------------------------------------------------------------------------
@@ -22,6 +47,8 @@ import config from './config'
 class Peer {
   constructor () {
     this._uuid = uuid.v1()
+    this._connectionsAwaitingAnswer = {}
+    this._walkerConnections = {}
     this.connectToServer()
   }
 
@@ -33,18 +60,12 @@ class Peer {
   }
 
   onSocketOpen () {
-    console.log('opening connection')
-    // const msg = JSON.stringify({
-    //   type: 'joining',
-    //   uuid: this._uuid
-    // })
-    // this._socket.send(msg)
     this.init()
   }
 
   onSocketMessage (message) {
-    console.log('Got from socket: ', message)
     const msg = JSON.parse(message.data)
+    // console.log('Got from socket: ' + message.data)
     if (msg.type === 'offer') {
       this.consume('offer', msg.payload, msg.uuid)
     }
@@ -52,11 +73,14 @@ class Peer {
       this.consume('answer', msg.payload)
     }
     if (msg.type === 'walker-request') {
-      console.log('got walker request')
       this._socket.send(this._readyOffer)
     }
     if (msg.type === 'walker-request-answer') {
-      this.connectWalker(msg.payload)
+      this.connectWalker(msg.payload, msg.walkerId)
+    }
+    if (msg.type === 'request-offer-for-walker') {
+      // console.log('walkerId from socket: ', message)
+      this.createNewWalkerConnection(msg.walkerId, this._socket)
     }
   }
 
@@ -74,7 +98,7 @@ class Peer {
     this.setupPeerConnection(this._initializedCon)
     this.setupPeerConnection(this._recievedCon)
     this.setupPeerConnection(this._readyCon)
-    this.setupReadyCon()
+    // this.setupReadyCon()
     this.createOffer()
   }
 
@@ -83,33 +107,54 @@ class Peer {
       var channel = evt.channel
       this._recievedChannel = channel
       channel.onopen = () => {
-        channel.send(this._readyOffer)
+        // console.log('Opened connection to revievedPeer')
+        // channel.send(this._readyOffer)
       }
       channel.onmessage = (message) => {
-        this.handleChannelMessage(message)
+        this.handleChannelMessage(message, channel)
       }
     }
   }
 
-  async setupReadyCon () {
+  async createNewWalkerConnection (walkerId, requestingChannel) {
+    console.log('Start creating new PeerConnection')
+    const con = new RTCPeerConnection(config.iceConfig)
     try {
-      const dataChannelReady = this._readyCon.createDataChannel('ready-data-channel')
+      const dataChannelReady = con.createDataChannel('ready-data-channel')
       // Setup handlers for the locally created channel
       dataChannelReady.onmessage = (message) => {
+        // console.log('onMessage called')
         this.handleChannelMessage(message, dataChannelReady)
       }
-      // Config for a 'data-only' offer
-      this._readyChannel = dataChannelReady
+
+      dataChannelReady.onopen = (event) => {
+        console.log('Connection opened to walker with id ' + walkerId)
+        this._walkerConnections[[walkerId]] = {
+          connection: con,
+          channel: dataChannelReady
+        }
+        delete this._connectionsAwaitingAnswer[[walkerId]]
+      }
+
       // Create the offer for a p2p connection
-      const offer = await this._readyCon.createOffer()
-      await this._readyCon.setLocalDescription(offer)
-      this._readyCon.onicecandidate = (candidate) => {
+      const offer = await con.createOffer()
+      await con.setLocalDescription(offer)
+      con.onicecandidate = (candidate) => {
+        console.log('Got candidate event')
         if (candidate.candidate == null) {
-          this._readyOffer = JSON.stringify({
-            type: 'walker-request-offer',
-            payload: this._readyCon.localDescription,
+          const jsonOffer = JSON.stringify({
+            walkerId,
+            type: 'offer-for-walker',
+            payload: con.localDescription,
             uuid: this._uuid
           })
+          this._connectionsAwaitingAnswer[[walkerId]] = {
+            connection: con,
+            offer: jsonOffer,
+            channel: dataChannelReady
+          }
+          console.log('Offer created, sending')
+          requestingChannel.send(jsonOffer)
         }
       }
     } catch (err) {
@@ -117,8 +162,9 @@ class Peer {
     }
   }
 
-  connectWalker (sdp) {
-    this._readyCon.setRemoteDescription(sdp)
+  connectWalker (sdp, walkerId) {
+    // console.log('connect walkerId: ', walkerId)
+    this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp)
   }
 
   async createOffer () {
@@ -127,6 +173,9 @@ class Peer {
       const dataChannel = this._initializedCon.createDataChannel('data-channel')
       dataChannel.onmessage = (message) => {
         this.handleChannelMessage(message, dataChannel)
+      }
+      dataChannel.onopen = () => {
+        console.log('Ready for walker')
       }
       this._initializedChannel = dataChannel
 
@@ -167,7 +216,7 @@ class Peer {
       } else if (type === 'answer') {
         const answer = new RTCSessionDescription(sdp)
         this._initializedCon.setRemoteDescription(answer)
-        console.log('initilizedCon has been set.')
+        // console.log('initilizedCon has been set.')
       }
     } catch (err) {
       console.log(err)
@@ -175,30 +224,46 @@ class Peer {
   }
 
   handleChannelMessage (channelMessage, channel) {
+    // console.log('handling: ', channelMessage)
     const channelMessageData = channelMessage.data
     var message = JSON.parse(channelMessageData)
     switch (message.type) {
-      case 'walker-request-offer':
-        console.log('waiting')
-        this._waitingOffer = JSON.stringify(message.payload)
-        break
+      // case 'walker-request-offer':
+      //   console.log('waiting')
+      //   this._waitingOffer = JSON.stringify(message.payload)
+      //   break
       case 'walker-to-middle':
+        // console.log('sending middle-to-next')
         this._initializedChannel.send(JSON.stringify({
           type: 'middle-to-next',
-          data: message.payload
+          data: message.payload,
+          walkerId: message.walkerId
         }))
         break
       case 'middle-to-next':
+        console.log('Recived answer from walker')
         var answer = new RTCSessionDescription(message.data)
-        this._readyCon.setRemoteDescription(answer)
-        console.log('middleToNext')
+        this.connectWalker(answer, message.walkerId)
+        // console.log('middleToNext')
         break
-      case 'send-waiting':
-        console.log('sendWaiting')
-        channel.send(this._waitingOffer)
+      case 'get-offer-from-next-peer':
+        // console.log('sending: request-offer-for-walker')
+        this._initializedChannel.send(JSON.stringify({
+          type: 'request-offer-for-walker',
+          walkerId: message.walkerId
+        }))
+        // channel.send(this._waitingOffer)
         break
       case 'chat':
         console.log(`FROM (${message.uuid}): ${message.payload}`)
+        break
+      case 'request-offer-for-walker':
+        // console.log('Current Channel: ', channel)
+        this.createNewWalkerConnection(message.walkerId, channel)
+        break
+      case 'offer-for-walker':
+        // console.log('sending offer to walker')
+        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload))
         break
       default: console.log(`No case for type: ${message.type}`)
     }
