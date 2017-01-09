@@ -97,18 +97,22 @@ class Peer {
 
   onSocketMessage(message) {
     const msg = JSON.parse(message.data);
-    if (msg.type === 'offer') {
-      this.consume('offer', msg.payload, msg.uuid);
-    }
-    if (msg.type === 'answer') {
-      this.consume('answer', msg.payload);
-    }
-    if (msg.type === 'answer-from-walker') {
-      this.connectWalker(msg.payload, msg.walkerId);
-    }
-    if (msg.type === 'request-offer-for-walker') {
-      // console.log('walkerId from socket: ', message)
-      this.createNewWalkerConnection(msg.walkerId, this._socket);
+    switch (msg.type) {
+      case 'offer':
+        this.consume('offer', msg.payload, msg.uuid);
+        break;
+      case 'answer':
+        this.consume('answer', msg.payload);
+        break;
+      case 'answer-from-walker':
+        var answer = new window.RTCSessionDescription(msg.payload);
+        this.connectWalker(answer, msg.walkerId);
+        break;
+      case 'request-offer-for-walker':
+        this.createNewWalkerConnection(msg.walkerId, this._socket);
+        break;
+      default:
+        console.log('Got message from socket with unknown type of: ' + msg.type);
     }
   }
 
@@ -170,9 +174,9 @@ class Peer {
         // Create the offer for a p2p connection
         const offer = yield con.createOffer();
         yield con.setLocalDescription(offer);
-        con.onicecandidate = function (candidate) {
+        con.onicecandidate = function (event) {
           console.log('Got candidate event');
-          if (candidate.candidate == null) {
+          if (event.candidate == null) {
             const jsonOffer = JSON.stringify({
               walkerId: walkerId,
               type: 'offer-for-walker',
@@ -186,6 +190,16 @@ class Peer {
             };
             console.log('Offer created, sending');
             requestingChannel.send(jsonOffer);
+          } else {
+            if (event.candidate) {
+              const jsonOffer = JSON.stringify({
+                walkerId: walkerId,
+                type: 'ice-candidate-for-walker',
+                payload: event.candidate,
+                uuid: _this._uuid
+              });
+              requestingChannel.send(jsonOffer);
+            }
           }
         };
       } catch (err) {
@@ -194,9 +208,12 @@ class Peer {
     })();
   }
 
-  connectWalker(sdp, walkerId) {
-    // console.log('connect walkerId: ', walkerId)
-    this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp);
+  addIceCandidate(candidate, walkerId) {
+    this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate);
+  }
+
+  connectWalker(answer, walkerId) {
+    this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer);
   }
 
   createOffer() {
@@ -217,8 +234,8 @@ class Peer {
         // Create the offer for a P2P connection
         const offer = yield _this2._initializedCon.createOffer();
         yield _this2._initializedCon.setLocalDescription(offer);
-        _this2._initializedCon.onicecandidate = function (candidate) {
-          if (candidate.candidate == null) {
+        _this2._initializedCon.onicecandidate = function (event) {
+          if (event.candidate == null) {
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this2._initializedCon.localDescription,
@@ -243,8 +260,8 @@ class Peer {
           yield _this3._recievedCon.setRemoteDescription(offer);
           const answer = yield _this3._recievedCon.createAnswer();
           _this3._recievedCon.setLocalDescription(answer);
-          _this3._recievedCon.onicecandidate = function (candidate) {
-            if (candidate.candidate == null) {
+          _this3._recievedCon.onicecandidate = function (event) {
+            if (event.candidate == null) {
               _this3._socket.send(JSON.stringify({
                 type: 'answer',
                 payload: _this3._recievedCon.localDescription,
@@ -288,6 +305,9 @@ class Peer {
         this.createNewWalkerConnection(message.walkerId, channel);
         break;
       case 'offer-for-walker':
+        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
+        break;
+      case 'ice-candidate-for-walker':
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
         break;
       default:

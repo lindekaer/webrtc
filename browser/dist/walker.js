@@ -59,7 +59,7 @@ class WalkerPeer {
   }
 
   init() {
-    this._currentCon = new RTCPeerConnection(_config2.default.iceConfig);
+    this._currentCon = new window.RTCPeerConnection(_config2.default.iceConfig);
     this._nextCon;
     this._nodeCount = 0;
     const msg = JSON.stringify({
@@ -75,13 +75,10 @@ class WalkerPeer {
     return _asyncToGenerator(function* () {
       try {
         const message = JSON.parse(rawMessage);
-        const offer = new RTCSessionDescription(message);
+        const offer = new window.RTCSessionDescription(message);
         _this.handleDataChannels(_this._currentCon);
-        yield _this._currentCon.setRemoteDescription(offer);
-        const answer = yield _this._currentCon.createAnswer();
-        _this._currentCon.setLocalDescription(answer);
-        _this._currentCon.onicecandidate = function (candidate) {
-          if (candidate.candidate == null) {
+        _this._currentCon.onicecandidate = function (event) {
+          if (event.candidate == null) {
             _this._socket.send(JSON.stringify({
               type: 'answer-from-walker',
               payload: _this._currentCon.localDescription,
@@ -89,6 +86,9 @@ class WalkerPeer {
             }));
           }
         };
+        yield _this._currentCon.setRemoteDescription(offer);
+        const answer = yield _this._currentCon.createAnswer();
+        _this._currentCon.setLocalDescription(answer);
       } catch (err) {
         console.log(err);
       }
@@ -99,22 +99,27 @@ class WalkerPeer {
     peerConnection.ondatachannel = event => {
       const channel = event.channel;
       channel.onmessage = msg => {
-        // console.log('Recieved offer from node ' + this._nodeCount)
         const data = JSON.parse(msg.data);
-        const offer = new RTCSessionDescription(data);
-        this._currentCon = this._nextCon;
-        this._nextCon = new RTCPeerConnection(_config2.default.iceConfig);
-        this.handleDataChannels(this._nextCon);
-
-        this._nextCon.setRemoteDescription(offer, () => {
-          this._nextCon.createAnswer(answer => {
-            this._nextCon.setLocalDescription(answer);
+        if (data.sdp) {
+          const offer = new window.RTCSessionDescription(data);
+          this.handleDataChannels(this._nextCon);
+          this._nextCon.setRemoteDescription(offer, () => {
+            this._nextCon.createAnswer(answer => {
+              this._nextCon.setLocalDescription(answer);
+            }, errorHandler);
           }, errorHandler);
-        }, errorHandler);
-        this._nextCon.onicecandidate = candidate => {
-          // console.log('Got candidate event')
-          if (candidate.candidate == null) {
-            // console.log('Sending answer to node ' + this._nodeCount)
+        } else {
+          console.log('should be ice: ');
+          console.log(JSON.stringify(data));
+          this._nextCon.addIceCandidate(new window.RTCIceCandidate(data));
+        }
+      };
+
+      channel.onopen = evt => {
+        this._currentCon = this._nextCon;
+        this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
+        this._nextCon.onicecandidate = event => {
+          if (event.candidate == null) {
             channel.send(JSON.stringify({
               type: 'answer-from-walker-relay',
               payload: this._nextCon.localDescription,
@@ -122,9 +127,6 @@ class WalkerPeer {
             }));
           }
         };
-      };
-
-      channel.onopen = evt => {
         this._nodeCount++;
         console.log('Connection established to node ' + this._nodeCount);
         channel.send(JSON.stringify({
