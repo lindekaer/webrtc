@@ -29,6 +29,10 @@ console.log = msg => {
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
 };
 
+setTimeout(() => {
+  document.querySelector('#info').classList.remove('hidden');
+}, 60000);
+
 /*
 -----------------------------------------------------------------------------------
 |

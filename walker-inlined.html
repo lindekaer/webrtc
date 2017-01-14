@@ -2687,7 +2687,7 @@ exports.default = {
     }
   },
 
-  webSocketUrl: 'ws://localhost:8080/socketserver'
+  webSocketUrl: 'ws://178.62.51.86:8080/socketserver'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -2720,6 +2720,10 @@ console.log = msg => {
   Log(data);
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
 };
+
+setTimeout(() => {
+  document.querySelector('#info').classList.remove('hidden');
+}, 60000);
 
 /*
 -----------------------------------------------------------------------------------

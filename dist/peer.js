@@ -47,6 +47,10 @@ console.log = msg => {
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
 };
 
+setTimeout(() => {
+  document.querySelector('#info').classList.remove('hidden');
+}, 45000);
+
 /*
 -----------------------------------------------------------------------------------
 |
@@ -65,11 +69,10 @@ class Peer {
 
   connectToServer() {
     console.log(_config2.default.webSocketUrl);
-    // this._socket = new window.WebSocket(config.webSocketUrl)
-    // this._socket.onopen = this.onSocketOpen.bind(this)
-    // this._socket.onmessage = this.onSocketMessage.bind(this)
-    // this._socket.onerror = err => console.log('Error in socket connection')
-    this.onSocketOpen();
+    this._socket = new window.WebSocket(_config2.default.webSocketUrl);
+    this._socket.onopen = this.onSocketOpen.bind(this);
+    this._socket.onmessage = this.onSocketMessage.bind(this);
+    this._socket.onerror = err => console.log('Error in socket connection');
   }
 
   onSocketOpen() {

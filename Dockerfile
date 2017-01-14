@@ -31,8 +31,8 @@ RUN mkdir /app \
 
 ADD selenium-test.js /app/selenium-test.js
 ADD upstart.sh /app/upstart.sh
-ADD peer-inlined.html /app/index.html
+ADD peer-inlined.html /app/peer.html
+ADD walker-inlined.html /app/walker.html
 
 RUN chmod +x /app/upstart.sh
-
-CMD /app/upstart.sh
+RUN ln -s /app/upstart.sh /usr/local/bin/test

@@ -2,6 +2,12 @@
 
 var _wrtc = require('wrtc');
 
+var _sdpTransform = require('sdp-transform');
+
+var _sdpTransform2 = _interopRequireDefault(_sdpTransform);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 /*
 -----------------------------------------------------------------------------------
 |
@@ -11,19 +17,23 @@ var _wrtc = require('wrtc');
 */
 
 // Setup of P2P connection and data channel
-const pc1 = new _wrtc.RTCPeerConnection(); /*
-                                           -----------------------------------------------------------------------------------
-                                           |
-                                           | Imports
-                                           |
-                                           -----------------------------------------------------------------------------------
-                                           */
+/*
+-----------------------------------------------------------------------------------
+|
+| Imports
+|
+-----------------------------------------------------------------------------------
+*/
 
+const pc1 = new _wrtc.RTCPeerConnection();
 const dc = pc1.createDataChannel();
 
 // Add event handlers on data channel
 dc.onopen = () => console.log('Peer 1: Data channel is open!');
-dc.onmessage = event => console.log(`Peer 1: Got message: "${ event.data }"`);
+dc.onmessage = event => {
+  console.log(`Peer 1: Got message: "${ event.data }"`);
+  process.exit();
+};
 
 var errorHandler = function (err) {
   console.error(err);
@@ -38,6 +48,7 @@ var options = {
 pc1.createOffer(offer => {
   // Set the offer as the local description
   pc1.setLocalDescription(offer, () => {
+    console.log(JSON.stringify(_sdpTransform2.default.parse(offer.sdp), null, 2));
     console.log('Peer 1: Setting local description');
   }, errorHandler);
 }, errorHandler, options);
