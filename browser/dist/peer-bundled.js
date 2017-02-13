@@ -97,6 +97,7 @@ class Peer {
 
   onSocketMessage(message) {
     const msg = JSON.parse(message.data);
+    // console.log('Message from socket: ' + JSON.stringify(msg))
     switch (msg.type) {
       case 'offer':
         this.consume('offer', msg.payload, msg.uuid);
@@ -174,22 +175,37 @@ class Peer {
         // Create the offer for a p2p connection
         const offer = yield con.createOffer();
         yield con.setLocalDescription(offer);
+        const jsonOffer = JSON.stringify({
+          walkerId: walkerId,
+          type: 'offer-for-walker',
+          payload: con.localDescription,
+          uuid: _this._uuid
+        });
+        _this._connectionsAwaitingAnswer[[walkerId]] = {
+          connection: con,
+          offer: jsonOffer,
+          channel: dataChannelReady
+        };
+        console.log(jsonOffer);
+        requestingChannel.send(jsonOffer);
         con.onicecandidate = function (event) {
           console.log('Got candidate event');
           if (event.candidate == null) {
-            const jsonOffer = JSON.stringify({
-              walkerId: walkerId,
-              type: 'offer-for-walker',
-              payload: con.localDescription,
-              uuid: _this._uuid
-            });
-            _this._connectionsAwaitingAnswer[[walkerId]] = {
-              connection: con,
-              offer: jsonOffer,
-              channel: dataChannelReady
-            };
-            console.log('Offer created, sending');
-            requestingChannel.send(jsonOffer);
+            // TODO: send end of candidate event
+
+            // const jsonOffer = JSON.stringify({
+            //   walkerId,
+            //   type: 'offer-for-walker',
+            //   payload: con.localDescription,
+            //   uuid: this._uuid
+            // })
+            // this._connectionsAwaitingAnswer[[walkerId]] = {
+            //   connection: con,
+            //   offer: jsonOffer,
+            //   channel: dataChannelReady
+            // }
+            // console.log('Offer created, sending now')
+            // requestingChannel.send(jsonOffer)
           } else {
             if (event.candidate) {
               const jsonOffer = JSON.stringify({
@@ -213,6 +229,7 @@ class Peer {
   }
 
   connectWalker(answer, walkerId) {
+    console.log('answer', answer);
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer);
   }
 

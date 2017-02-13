@@ -68,6 +68,7 @@ function onMessage(message) {
   }
 
   if (msg.type === 'offer-for-walker') {
+    console.log(JSON.stringify(msg));
     walker.send(JSON.stringify(msg.payload));
   }
 

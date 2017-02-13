@@ -75,7 +75,8 @@ class WalkerPeer {
   }
 
   onSocketMessage(message) {
-    console.log(message);
+    console.log(JSON.stringify(message));
+    console.log('message: ', JSON.stringify(message.data));
     this.consume(message.data);
   }
 
@@ -127,11 +128,17 @@ class WalkerPeer {
           this._nextCon.setRemoteDescription(offer, () => {
             this._nextCon.createAnswer(answer => {
               this._nextCon.setLocalDescription(answer);
+              channel.send(JSON.stringify({
+                type: 'answer-from-walker-relay',
+                payload: this._nextCon.localDescription,
+                walkerId: this._uuid
+              }));
             }, errorHandler);
           }, errorHandler);
         } else {
-          console.log('should be ice: ');
-          console.log(JSON.stringify(data));
+          // console.log('Adding ice candidate')
+          // console.log('should be ice: ')
+          // console.log(JSON.stringify(data))
           this._nextCon.addIceCandidate(new window.RTCIceCandidate(data));
         }
       };
@@ -141,11 +148,11 @@ class WalkerPeer {
         this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
         this._nextCon.onicecandidate = event => {
           if (event.candidate == null) {
-            channel.send(JSON.stringify({
-              type: 'answer-from-walker-relay',
-              payload: this._nextCon.localDescription,
-              walkerId: this._uuid
-            }));
+            // channel.send(JSON.stringify({
+            //   type: 'answer-from-walker-relay',
+            //   payload: this._nextCon.localDescription,
+            //   walkerId: this._uuid
+            // }))
           }
         };
         this._nodeCount++;
