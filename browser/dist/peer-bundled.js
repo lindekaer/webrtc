@@ -176,7 +176,7 @@ class Peer {
         const offer = yield con.createOffer();
         yield con.setLocalDescription(offer);
         const jsonOffer = JSON.stringify({
-          walkerId: walkerId,
+          walkerId,
           type: 'offer-for-walker',
           payload: con.localDescription,
           uuid: _this._uuid
@@ -209,7 +209,7 @@ class Peer {
           } else {
             if (event.candidate) {
               const jsonOffer = JSON.stringify({
-                walkerId: walkerId,
+                walkerId,
                 type: 'ice-candidate-for-walker',
                 payload: event.candidate,
                 uuid: _this._uuid
