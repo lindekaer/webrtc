@@ -6,7 +6,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = {
   iceConfig: {
-    iceServers: [{ url: 'stun:stun.I.google.com:19302' }]
+    iceServers: [{
+      url: 'stun:stun.I.google.com:19302'
+    }, {
+      url: 'turn:numb.viagenie.ca',
+      credential: 'muazkh',
+      username: 'webrtc@live.com'
+    }]
   },
 
   mediaConstraints: {
@@ -16,7 +22,7 @@ exports.default = {
     }
   },
 
-  webSocketUrl: 'ws://localhost:8080/socketserver'
+  webSocketUrl: 'ws://178.62.51.86:8080/socketserver' //ws://localhost:8080/socketserver'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -97,7 +103,7 @@ class Peer {
 
   onSocketMessage(message) {
     const msg = JSON.parse(message.data);
-    // console.log('Message from socket: ' + JSON.stringify(msg))
+    console.log('Message from socket: ' + JSON.stringify(msg));
     switch (msg.type) {
       case 'offer':
         this.consume('offer', msg.payload, msg.uuid);
@@ -273,17 +279,25 @@ class Peer {
     return _asyncToGenerator(function* () {
       try {
         if (type === 'offer') {
+          console.log('Its an offer');
           const offer = new window.RTCSessionDescription(sdp);
+          console.log('Setting remote description');
           yield _this3._recievedCon.setRemoteDescription(offer);
+          console.log('Done setting remote description');
           const answer = yield _this3._recievedCon.createAnswer();
+          console.log('Answer created: ' + JSON.stringify(answer));
           _this3._recievedCon.setLocalDescription(answer);
           _this3._recievedCon.onicecandidate = function (event) {
+            console.log('On ice candidate: ' + JSON.stringify(event));
             if (event.candidate == null) {
-              _this3._socket.send(JSON.stringify({
+              console.log('Candidate is null');
+              var answer = JSON.stringify({
                 type: 'answer',
                 payload: _this3._recievedCon.localDescription,
                 uuid: inputUuid
-              }));
+              });
+              console.log(answer);
+              _this3._socket.send(answer);
             }
           };
         } else if (type === 'answer') {

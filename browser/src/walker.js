@@ -44,7 +44,7 @@ class WalkerPeer {
 
   onSocketMessage (message) {
     console.log(JSON.stringify(message))
-    console.log('message: ', JSON.stringify(message.data))
+    console.log('message: ' + JSON.stringify(message.data))
     this.consume(message.data)
   }
 
