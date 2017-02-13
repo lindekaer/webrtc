@@ -102,6 +102,8 @@ class WalkerPeer {
       channel.onmessage = msg => {
         const data = JSON.parse(msg.data);
         if (data.sdp) {
+          console.log('Offer: ');
+          console.log(JSON.stringify(data));
           const offer = new window.RTCSessionDescription(data);
           this.handleDataChannels(this._nextCon);
           this._nextCon.setRemoteDescription(offer, () => {
@@ -118,6 +120,8 @@ class WalkerPeer {
           // console.log('Adding ice candidate')
           // console.log('should be ice: ')
           // console.log(JSON.stringify(data))
+          console.log('Candidate: ');
+          console.log(JSON.stringify(data));
           this._nextCon.addIceCandidate(new window.RTCIceCandidate(data));
         }
       };
