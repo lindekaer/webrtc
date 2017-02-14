@@ -62,20 +62,25 @@ class WalkerPeer {
   async consume (rawMessage) {
     try {
       const message = JSON.parse(rawMessage)
-      const offer = new window.RTCSessionDescription(message)
-      this.handleDataChannels(this._currentCon)
-      this._currentCon.onicecandidate = (event) => {
-        if (event.candidate == null) {
-          this._socket.send(JSON.stringify({
-            type: 'answer-from-walker',
-            payload: this._currentCon.localDescription,
-            walkerId: this._uuid
-          }))
+      if (data.sdp) {
+        const offer = new window.RTCSessionDescription(message)
+        this.handleDataChannels(this._currentCon)
+        this._currentCon.onicecandidate = (event) => {
+          if (event.candidate == null) {
+            this._socket.send(JSON.stringify({
+              type: 'answer-from-walker',
+              payload: this._currentCon.localDescription,
+              walkerId: this._uuid
+            }))
+          }
         }
+        await this._currentCon.setRemoteDescription(offer)
+        const answer = await this._currentCon.createAnswer()
+        this._currentCon.setLocalDescription(answer)
+      } else {
+        this._currentCon.addIceCandidate(new window.RTCIceCandidate(message))
       }
-      await this._currentCon.setRemoteDescription(offer)
-      const answer = await this._currentCon.createAnswer()
-      this._currentCon.setLocalDescription(answer)
+
     } catch (err) {
       console.log(err)
     }

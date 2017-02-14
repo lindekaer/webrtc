@@ -103,20 +103,24 @@ class WalkerPeer {
     return _asyncToGenerator(function* () {
       try {
         const message = JSON.parse(rawMessage);
-        const offer = new window.RTCSessionDescription(message);
-        _this.handleDataChannels(_this._currentCon);
-        _this._currentCon.onicecandidate = function (event) {
-          if (event.candidate == null) {
-            _this._socket.send(JSON.stringify({
-              type: 'answer-from-walker',
-              payload: _this._currentCon.localDescription,
-              walkerId: _this._uuid
-            }));
-          }
-        };
-        yield _this._currentCon.setRemoteDescription(offer);
-        const answer = yield _this._currentCon.createAnswer();
-        _this._currentCon.setLocalDescription(answer);
+        if (data.sdp) {
+          const offer = new window.RTCSessionDescription(message);
+          _this.handleDataChannels(_this._currentCon);
+          _this._currentCon.onicecandidate = function (event) {
+            if (event.candidate == null) {
+              _this._socket.send(JSON.stringify({
+                type: 'answer-from-walker',
+                payload: _this._currentCon.localDescription,
+                walkerId: _this._uuid
+              }));
+            }
+          };
+          yield _this._currentCon.setRemoteDescription(offer);
+          const answer = yield _this._currentCon.createAnswer();
+          _this._currentCon.setLocalDescription(answer);
+        } else {
+          _this._currentCon.addIceCandidate(new window.RTCIceCandidate(message));
+        }
       } catch (err) {
         console.log(err);
       }
