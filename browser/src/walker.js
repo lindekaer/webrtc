@@ -14,7 +14,7 @@ import config from './config'
 const Log = console.log
 console.log = (msg) => {
   const data = Date.now() + ' - ' + msg
-  Log(data)
+  Log(msg)
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
 }
 
