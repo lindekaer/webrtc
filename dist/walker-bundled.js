@@ -82,6 +82,7 @@ class WalkerPeer {
   onSocketMessage(message) {
     console.log('Got message...');
     console.log(message);
+    console.log(message.data);
     this.consume(message.data);
   }
 
