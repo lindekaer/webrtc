@@ -100,7 +100,6 @@ function runContainer(currentNum, type, cb) {
 }
 
 function startWalker(cb) {
-  console.log('Here!');
   const child = (0, _child_process.spawn)('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
   spawns.push(child);
   let numConnections = 0;
