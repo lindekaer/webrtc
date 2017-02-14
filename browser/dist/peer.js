@@ -76,7 +76,7 @@ class Peer {
 
   onSocketMessage(message) {
     const msg = JSON.parse(message.data);
-    console.log('Message from socket: ' + JSON.stringify(msg));
+    // console.log('Message from socket: ' + JSON.stringify(msg))
     switch (msg.type) {
       case 'offer':
         this.consume('offer', msg.payload, msg.uuid);
@@ -252,24 +252,24 @@ class Peer {
     return _asyncToGenerator(function* () {
       try {
         if (type === 'offer') {
-          console.log('Its an offer');
+          // console.log('Its an offer')
           const offer = new window.RTCSessionDescription(sdp);
-          console.log('Setting remote description');
+          // console.log('Setting remote description')
           yield _this3._recievedCon.setRemoteDescription(offer);
-          console.log('Done setting remote description');
+          // console.log('Done setting remote description')
           const answer = yield _this3._recievedCon.createAnswer();
-          console.log('Answer created: ' + JSON.stringify(answer));
+          // console.log('Answer created: ' + JSON.stringify(answer))
           _this3._recievedCon.setLocalDescription(answer);
           _this3._recievedCon.onicecandidate = function (event) {
-            console.log('On ice candidate: ' + JSON.stringify(event));
+            // console.log('On ice candidate: ' + JSON.stringify(event))
             if (event.candidate == null) {
-              console.log('Candidate is null');
+              // console.log('Candidate is null')
               var answer = JSON.stringify({
                 type: 'answer',
                 payload: _this3._recievedCon.localDescription,
                 uuid: inputUuid
               });
-              console.log(answer);
+              // console.log(answer)
               _this3._socket.send(answer);
             }
           };
