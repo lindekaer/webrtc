@@ -76,7 +76,7 @@ class WalkerPeer {
     return _asyncToGenerator(function* () {
       try {
         const message = JSON.parse(rawMessage);
-        if (data.sdp) {
+        if (message.sdp) {
           const offer = new window.RTCSessionDescription(message);
           _this.handleDataChannels(_this._currentCon);
           _this._currentCon.onicecandidate = function (event) {

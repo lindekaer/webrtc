@@ -62,7 +62,7 @@ class WalkerPeer {
   async consume (rawMessage) {
     try {
       const message = JSON.parse(rawMessage)
-      if (data.sdp) {
+      if (message.sdp) {
         const offer = new window.RTCSessionDescription(message)
         this.handleDataChannels(this._currentCon)
         this._currentCon.onicecandidate = (event) => {
