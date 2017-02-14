@@ -21,19 +21,20 @@ var peers = {}
 var offers = []
 var firstPeer
 var walker
+var connectedCount = 0
 
 wss.on('connection', (ws) => {
+  connectedCount++
+  console.log(`Opened! ${connectedCount} connected.`)
 
-  console.log(`${Object.keys(peers).length + 1} connected...`)
-
-  // Save reference to first peer
   ws.on('message', onMessage)
+  ws.on('close', onClose)
 })
 
 function onMessage (message) {
   const msg = JSON.parse(message)
   if (msg.type === 'joining') {
-    if (Object.keys(peers).length === 0) {
+    if (connectedCount === 1) {
       console.log('setting first peer')
       firstPeer = this
     }
@@ -72,4 +73,9 @@ function onMessage (message) {
   if (msg.type === 'walker-request-answer') {
     firstPeer.send(JSON.stringify(msg))
   }
+}
+
+function onClose () {
+  connectedCount--
+  console.log(`Closed! ${connectedCount} connected.`)
 }
