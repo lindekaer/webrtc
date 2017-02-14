@@ -156,20 +156,6 @@ class Peer {
         console.log('Got candidate event')
         if (event.candidate == null) {
           // TODO: send end of candidate event
-
-          // const jsonOffer = JSON.stringify({
-          //   walkerId,
-          //   type: 'offer-for-walker',
-          //   payload: con.localDescription,
-          //   uuid: this._uuid
-          // })
-          // this._connectionsAwaitingAnswer[[walkerId]] = {
-          //   connection: con,
-          //   offer: jsonOffer,
-          //   channel: dataChannelReady
-          // }
-          // console.log('Offer created, sending now')
-          // requestingChannel.send(jsonOffer)
         } else {
           if (event.candidate) {
             const jsonOffer = JSON.stringify({
@@ -289,6 +275,9 @@ class Peer {
         break
       case 'ice-candidate-for-walker':
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload))
+        break
+      case 'ice-candidate-for-peer':
+        this._walkerConnections[[message.walkerId]].addIceCandidate(new window.RTCIceCandidate(msg.payload))
         break
       default: console.log(`No case for type: ${message.type}`)
     }
