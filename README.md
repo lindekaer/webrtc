@@ -6,6 +6,7 @@ Du skal åbne `index.html#init` i én browser-tab og `index.html` i en anden. Al
 Add timeout to peers, so we avoid hanging
 
 ## Boot Ubuntu from scratch
+rm -rf /etc/update-motd.d/99-one-click
 cd / 
 git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
 cd /webrtc

@@ -10,7 +10,7 @@
     "test": "npm run transpile && node dist/run.js 5",
     "inlineHtml": "inline-assets peer.html peer-inlined.html; inline-assets walker.html walker-inlined.html",
     "bundle": "browserify ./dist/peer.js -o ./dist/peer-bundled.js && browserify ./dist/walker.js -o ./dist/walker-bundled.js",
-    "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --signaling-url ws://192.168.1.144:8080/socketserver --mode spawn"
+    "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --mode spawn"
   },
   "babel": {
     "presets": [
