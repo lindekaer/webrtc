@@ -328,6 +328,8 @@ class Peer {
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
         break;
       case 'ice-candidate-for-peer':
+        console.log('Got candidate from walker');
+        console.log(JSON.stringify(message));
         this._walkerConnections[[message.walkerId]].addIceCandidate(new window.RTCIceCandidate(msg.payload));
         break;
       default:
