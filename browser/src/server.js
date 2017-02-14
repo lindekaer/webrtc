@@ -76,6 +76,6 @@ function onMessage (message) {
   }
 
   if (msg.type === 'ice-candidate-for-walker') {
-    firstPeer.send(JSON.stringify(msg.payload))
+    walker.send(JSON.stringify(msg.payload))
   }
 }

@@ -65,7 +65,7 @@ class Peer {
 
   onSocketMessage (message) {
     const msg = JSON.parse(message.data)
-    console.log('Message from socket: ' + JSON.stringify(msg))
+    // console.log('Message from socket: ' + JSON.stringify(msg))
     switch (msg.type) {
       case 'offer':
         this.consume('offer', msg.payload, msg.uuid)
@@ -229,24 +229,24 @@ class Peer {
   async consume (type, sdp, inputUuid) {
     try {
       if (type === 'offer') {
-        console.log('Its an offer')
+        // console.log('Its an offer')
         const offer = new window.RTCSessionDescription(sdp)
-        console.log('Setting remote description')
+        // console.log('Setting remote description')
         await this._recievedCon.setRemoteDescription(offer)
-        console.log('Done setting remote description')
+        // console.log('Done setting remote description')
         const answer = await this._recievedCon.createAnswer()
-        console.log('Answer created: ' + JSON.stringify(answer))
+        // console.log('Answer created: ' + JSON.stringify(answer))
         this._recievedCon.setLocalDescription(answer)
         this._recievedCon.onicecandidate = (event) => {
-          console.log('On ice candidate: ' + JSON.stringify(event))
+          // console.log('On ice candidate: ' + JSON.stringify(event))
           if (event.candidate == null) {
-            console.log('Candidate is null')
+            // console.log('Candidate is null')
             var answer = JSON.stringify({
               type: 'answer',
               payload: this._recievedCon.localDescription,
               uuid: inputUuid
             })
-            console.log(answer)
+            // console.log(answer)
             this._socket.send(answer)
           }
         }
