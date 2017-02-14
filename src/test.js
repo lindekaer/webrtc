@@ -33,14 +33,14 @@ var errorHandler = function (err) {
 }
 
 var options = {
-  offerToReceiveAudio: false,
-  offerToReceiveVideo: false
+  
 }
 
 // Create an offer with the specified options
 pc1.createOffer((offer) => {
   // Set the offer as the local description
   pc1.setLocalDescription(offer, () => {
+    console.log(offer.sdp)
     console.log(JSON.stringify(transform.parse(offer.sdp), null, 2))
     console.log('Peer 1: Setting local description')
   }, errorHandler)

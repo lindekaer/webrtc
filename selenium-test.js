@@ -7,9 +7,8 @@
 */
 
 var webdriver = require('selenium-webdriver')
-var until = require('selenium-webdriver').until
-var By = require('selenium-webdriver').By
 var chrome = require('selenium-webdriver/chrome')
+var async = require('async')
 
 /*
 -----------------------------------------------------------------------------------
@@ -21,29 +20,81 @@ var chrome = require('selenium-webdriver/chrome')
 
 // Get the command line args
 var type = process.argv[2]
+var numberOfPeers = parseInt(process.argv[3])
 
 // Setup driver
+var loggingPreferences = new webdriver.logging.Preferences()
+loggingPreferences.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.ALL)
+
+var chromeOptions = new chrome.Options()
+chromeOptions.addArguments('--no-sandbox')
+chromeOptions.addArguments('--enable-logging')
+chromeOptions.setLoggingPrefs(loggingPreferences)
+
 var driver = new webdriver.Builder()
-  .forBrowser('chrome')
-  .setChromeOptions(new chrome.Options().addArguments('--no-sandbox'))
+  .forBrowser(webdriver.Browser.CHROME)
+  .setChromeOptions(chromeOptions)
   .build()
 
-// Load the local HTML file
-driver.get(`file:///app/${type}.html`)
+const path = `file:///app/${type}.html`
 
-// Run the actual test
-var infoElement = driver.findElement(By.id('info'))
-driver.wait(until.elementIsVisible(infoElement))
-infoElement.getText().then(text => {
-  // Construct array
-  var arr = text.split('#!#')
-  // Remove first empty item
-  arr.shift()
-  console.log('\n--- OUTPUT ---')
-  for (let item of arr) {
-    console.log(item)
-  }
-  console.log('\n')
-})
+// type = 'peer'
+// numberOfPeers = 5
+// const path = type === 'peer' ? `file:///Users/theo/Sites/webrtc/peer-inlined.local.html` : `file:///Users/theo/Sites/webrtc/walker-inlined.local.html`
 
-driver.quit()
+if (type === 'walker') {
+  driver.get(path)
+  driver.wait(doneSignalFired)
+  driver.quit()
+} else {
+  driver.get(`file:///app/index.html`)
+  let count = 0
+  async.whilst(
+    () => {
+      return count < numberOfPeers
+    },
+    (cb) => {
+      count++
+      setTimeout(() => {
+        console.log('hi ', count)
+        console.log(path)
+        driver.executeScript(`window.open('${path}');`)
+        cb(null, count)
+      }, 2000)
+    },
+    () => {
+      setTimeout(() => {
+        console.log('**NEXT**')
+      }, 1000)
+    }
+  )
+  driver.wait(doneSignalFired)
+  driver.quit()
+}
+
+/*
+-----------------------------------------------------------------------------------
+|
+| Functions
+|
+-----------------------------------------------------------------------------------
+*/
+
+function doneSignalFired () {
+  return (function () {
+    return new Promise((resolve, reject) => {
+      const interval = setInterval(function () {
+        driver.manage().logs().get(webdriver.logging.Type.BROWSER)
+          .then(function (entries) {
+            entries.forEach(e => {
+              console.log(e.message)
+              if (e.message.indexOf('**DONE**') !== -1) {
+                clearInterval(interval)
+                return resolve()
+              }
+            })
+          })
+      }, 1000)
+    })
+  })().then(() => true)
+}

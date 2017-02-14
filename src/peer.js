@@ -24,21 +24,14 @@
 -----------------------------------------------------------------------------------
 */
 
-// import webrtc from 'wrtc'
-// import WebSocket from 'uws'
-import uuid from 'uuid'
 import config from './config'
+import uuid from 'uuid'
 
 const Log = console.log
 console.log = (msg) => {
   const data = Date.now() + ' - ' + msg
   Log(data)
-  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
 }
-
-setTimeout(() => {
-  document.querySelector('#info').classList.remove('hidden')
-}, 45000)
 
 /*
 -----------------------------------------------------------------------------------
@@ -189,10 +182,12 @@ class Peer {
       await this._initializedCon.setLocalDescription(offer)
       this._initializedCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {
+          console.log('Sending joining msg')
           const msg = JSON.stringify({
             type: 'joining',
             payload: this._initializedCon.localDescription,
-            uuid: this._uuid
+            uuid: this._uuid,
+            containerUuid: config.uuid
           })
           this._socket.send(msg)
         }
@@ -203,6 +198,7 @@ class Peer {
   }
 
   async consume (type, sdp, inputUuid) {
+    console.log('Consuming ' + type)
     try {
       if (type === 'offer') {
         const offer = new RTCSessionDescription(sdp)
@@ -264,6 +260,7 @@ class Peer {
         break
       case 'request-offer-for-walker':
         // console.log('Current Channel: ', channel)
+        console.log('Creating new walker connection')
         this.createNewWalkerConnection(message.walkerId, channel)
         break
       case 'offer-for-walker':
@@ -276,4 +273,3 @@ class Peer {
 }
 
 const newPeer = new Peer()
-console.log('My ID is: ' + newPeer._uuid)

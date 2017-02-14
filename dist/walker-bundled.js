@@ -15,8 +15,8 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-
-  webSocketUrl: 'ws://178.62.51.86:8080/socketserver'
+  webSocketUrl: 'SIGNALING_URL',
+  uuid: 'SIGNALING_UUID'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -52,7 +52,7 @@ console.log = msg => {
 
 setTimeout(() => {
   document.querySelector('#info').classList.remove('hidden');
-}, 60000);
+}, 20000);
 
 /*
 -----------------------------------------------------------------------------------
@@ -69,6 +69,7 @@ class WalkerPeer {
   }
 
   connectToServer() {
+    console.log('Connect to server...');
     this._socket = new window.WebSocket(_config2.default.webSocketUrl);
     this._socket.onopen = this.onSocketOpen.bind(this);
     this._socket.onmessage = this.onSocketMessage.bind(this);
@@ -79,14 +80,17 @@ class WalkerPeer {
   }
 
   onSocketMessage(message) {
+    console.log('Got message...');
     console.log(message);
     this.consume(message.data);
   }
 
   init() {
+    console.log('Init...');
     this._currentCon = new RTCPeerConnection(_config2.default.iceConfig);
     this._nextCon;
     this._nodeCount = 0;
+    console.log('Send walker request...');
     const msg = JSON.stringify({
       type: 'walker-request',
       uuid: this._uuid

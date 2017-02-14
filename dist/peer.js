@@ -1,12 +1,12 @@
 'use strict';
 
-var _uuid = require('uuid');
-
-var _uuid2 = _interopRequireDefault(_uuid);
-
 var _config = require('./config');
 
 var _config2 = _interopRequireDefault(_config);
+
+var _uuid = require('uuid');
+
+var _uuid2 = _interopRequireDefault(_uuid);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -36,20 +36,11 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 -----------------------------------------------------------------------------------
 */
 
-// import webrtc from 'wrtc'
-// import WebSocket from 'uws'
-
-
 const Log = console.log;
 console.log = msg => {
   const data = Date.now() + ' - ' + msg;
   Log(data);
-  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
 };
-
-setTimeout(() => {
-  document.querySelector('#info').classList.remove('hidden');
-}, 45000);
 
 /*
 -----------------------------------------------------------------------------------
@@ -207,10 +198,12 @@ class Peer {
         yield _this2._initializedCon.setLocalDescription(offer);
         _this2._initializedCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
+            console.log('Sending joining msg');
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this2._initializedCon.localDescription,
-              uuid: _this2._uuid
+              uuid: _this2._uuid,
+              containerUuid: _config2.default.uuid
             });
             _this2._socket.send(msg);
           }
@@ -225,6 +218,7 @@ class Peer {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
+      console.log('Consuming ' + type);
       try {
         if (type === 'offer') {
           const offer = new RTCSessionDescription(sdp);
@@ -287,6 +281,7 @@ class Peer {
         break;
       case 'request-offer-for-walker':
         // console.log('Current Channel: ', channel)
+        console.log('Creating new walker connection');
         this.createNewWalkerConnection(message.walkerId, channel);
         break;
       case 'offer-for-walker':
@@ -300,4 +295,3 @@ class Peer {
 }
 
 const newPeer = new Peer();
-console.log('My ID is: ' + newPeer._uuid);

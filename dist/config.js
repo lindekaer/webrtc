@@ -14,6 +14,6 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-
-  webSocketUrl: 'ws://178.62.51.86:8080/socketserver'
+  webSocketUrl: 'SIGNALING_URL',
+  uuid: 'SIGNALING_UUID'
 };

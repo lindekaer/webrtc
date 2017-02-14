@@ -21,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "async": "2.1.4",
+    "colors": "1.1.2",
     "inline-assets": "1.1.2",
     "inliner": "1.10.1",
     "sdp-transform": "1.7.0",

@@ -1,5 +1,7 @@
 FROM ubuntu:14.04
 
+ARG SIGNALING_URL
+
 RUN echo deb http://security.ubuntu.com/ubuntu trusty-security main restricted >> /etc/apt/sources.list \
     && echo deb-src http://security.ubuntu.com/ubuntu trusty-security main restricted >> /etc/apt/sources.list \
     && echo deb http://security.ubuntu.com/ubuntu trusty-security universe >> /etc/apt/sources.list \
@@ -27,12 +29,15 @@ RUN cd /tmp \
 
 RUN mkdir /app \
     && cd /app \ 
-    && npm install selenium-webdriver
+    && npm install selenium-webdriver async
+
+RUN echo $SIGNALING_URL
 
 ADD selenium-test.js /app/selenium-test.js
 ADD upstart.sh /app/upstart.sh
 ADD peer-inlined.html /app/peer.html
 ADD walker-inlined.html /app/walker.html
+ADD index.html /app/index.html
 
 RUN chmod +x /app/upstart.sh
 RUN ln -s /app/upstart.sh /usr/local/bin/test

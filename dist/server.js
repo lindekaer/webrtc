@@ -25,6 +25,9 @@ var firstPeer;
 var walker;
 
 wss.on('connection', ws => {
+
+  console.log(`${ Object.keys(peers).length + 1 } connected...`);
+
   // Save reference to first peer
   ws.on('message', onMessage);
 });
@@ -35,7 +38,8 @@ function onMessage(message) {
     if (Object.keys(peers).length === 0) {
       console.log('setting first peer');
       firstPeer = this;
-    } else {}
+    }
+
     peers[msg.uuid] = this;
     // If there are any offers, send the first-received to the connecting peer
     if (offers.length !== 0) {
@@ -45,10 +49,6 @@ function onMessage(message) {
     }
     offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' });
   }
-
-  // if (msg.type === 'offer') {
-  //   offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
-  // }
 
   if (msg.type === 'answer') {
     peers[msg.uuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }));
