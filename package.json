@@ -11,7 +11,8 @@
     "inlineHtml": "inline-assets peer.html peer-inlined.html; inline-assets walker.html walker-inlined.html",
     "inlineHtmlLocal": "cp walker-inlined.html walker-inlined.local.html && replace 'SIGNALING_URL' 'ws://178.62.51.86:8080/socketserver' walker-inlined.local.html",
     "bundle": "browserify ./dist/peer.js -o ./dist/peer-bundled.js && browserify ./dist/walker.js -o ./dist/walker-bundled.js",
-    "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --mode spawn"
+    "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --mode spawn",
+    "pushit": "git add .; git commit -m 'Bacon'; git push"
   },
   "babel": {
     "presets": [
