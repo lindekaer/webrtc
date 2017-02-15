@@ -52,7 +52,7 @@ function onMessage (message) {
     case 'ice-candidate-for-walker':
       iceCandidateForWalker(msg)
       break
-    case 'ice-candidate-for-peer':
+    case 'ice-candidate-for-peer-relay':
       iceCandidateForPeer(msg)
       break
     default: 
