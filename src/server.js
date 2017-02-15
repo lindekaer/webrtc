@@ -35,6 +35,8 @@ wss.on('connection', (ws) => {
 function onMessage (message) {
   const msg = JSON.parse(message)
   if (msg.type === 'joining') {
+    peers[msg.uuid] = this
+
     // Ensure to set the first peer
     if (!firstPeer) {
       firstPeer = this
@@ -42,9 +44,7 @@ function onMessage (message) {
       return
     }
 
-    peers[msg.uuid] = this
-
-    while (!sendOfferToPeer(this, message)) {
+    while (!sendOfferToPeer(this, msg)) {
       console.log('Retrying...')
     }
   }
@@ -85,7 +85,7 @@ function onClose () {
 function sendOfferToPeer (peer, message) {
   var offer = offers.shift()
   if (!offer) return false
-  this.send(JSON.stringify(offer))
+  peer.send(JSON.stringify(offer))
   offers.push({ payload: message.payload, uuid: message.uuid, type: 'offer' })
   return true
 }
