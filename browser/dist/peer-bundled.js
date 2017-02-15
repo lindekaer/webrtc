@@ -20,7 +20,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://178.62.51.86:9000/socketserver', //'ws://localhost:9000/socketserver',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'
@@ -97,23 +97,6 @@ class Peer {
 
   onSocketMessage(message) {
     this.handleMessage(message.data, this.signalingChannel);
-    // const msg = JSON.parse(message.data)
-    // switch (msg.type) {
-    // case 'offer':
-    //   this.consume('offer', msg.payload, msg.uuid)
-    //   break
-    // case 'answer':
-    //   this.consume('answer', msg.payload)
-    //   break
-    //   case 'answer-from-walker':
-    //     var answer = new window.RTCSessionDescription(msg.payload)
-    //     this.connectToWalker(answer, msg.walkerId)
-    //     break
-    //   case 'request-offer-for-walker':
-    //     this.createNewWalkerConnection(msg.walkerId, this.signalingChannel)
-    //     break
-    //   default: console.log('Got message from socket with unknown type of: ' + msg.type)
-    // }
   }
 
   initialize() {
