@@ -17,69 +17,99 @@ var wss = new WebSocketServer({ port: 9000 })
 -----------------------------------------------------------------------------------
 */
 
-var peers = {}
-var offers = []
+const peers = {}
+var lastPeer
 var firstPeer
+var connectedCount = 0
 var walker
 
 wss.on('connection', (ws) => {
-  // Save reference to first peer
+  connectedCount++
+  console.log(`Opened! ${connectedCount} connected.`)
+
   ws.on('message', onMessage)
+  ws.on('close', onClose)
 })
 
 function onMessage (message) {
   const msg = JSON.parse(message)
-  if (msg.type === 'joining') {
-    if (Object.keys(peers).length === 0) {
-      console.log('setting first peer')
-      firstPeer = this
-    } else {
-    }
-    peers[msg.uuid] = this
-     // If there are any offers, send the first-received to the connecting peer
-    if (offers.length !== 0) {
-      console.log('Sending offer...')
-      var offer = offers.shift()
-      this.send(JSON.stringify(offer))
-    }
-    offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
+  switch (msg.type) {
+    case 'joining':
+      joining(msg, this)
+      break
+    case 'answer-for-joining':
+      answerForJoining(msg)
+      break
+    case 'walker-request':
+      walkerRequest(msg, this)
+      break
+    case 'offer-for-walker':
+      offerForWalker(msg)
+      break
+    case 'answer-from-walker-relay':
+      answerFromWalkerRelay(msg)
+      break
+    case 'ice-candidate-for-walker':
+      iceCandidateForWalker(msg)
+      break
+    case 'ice-candidate-for-peer':
+      iceCandidateForPeer(msg)
+      break
+    default: console.log('No message type')
   }
+}
 
-  // if (msg.type === 'offer') {
-  //   offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
-  // }
+function onClose () {
+  connectedCount--
+  console.log(`Closed! ${connectedCount} connected.`)
+}
 
-  if (msg.type === 'answer') {
-    peers[msg.uuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }))
+const joining = (msg, socket) => {
+  peers[msg.joinerId] = socket
+  if (!lastPeer) {
+      firstPeer = socket
+      lastPeer = socket
+      return
   }
+  lastPeer.send(JSON.stringify(msg))
+  lastPeer = socket
+}
 
-  if (msg.type === 'walker-request') {
-    // Save reference to walker socket
-    console.log('walker request')
-    walker = this
-    // Notify first peer about walker
-    var mess = JSON.stringify({
-      type: 'request-offer-for-walker',
-      walkerId: msg.uuid
-    })
-    console.log('Now sending: ', mess)
-    firstPeer.send(mess)
-  }
+const answerForJoining = (msg) => {
+  peers[msg.joinerId].send(JSON.stringify(msg))
+}
 
-  if (msg.type === 'offer-for-walker') {
-    console.log(JSON.stringify(msg))
-    walker.send(JSON.stringify(msg.payload))
-  }
+const walkerRequest = (msg, socket) => {
+  // Save reference to walker socket
+  walker = socket
+  // Notify first peer about walker
+  var message = JSON.stringify({
+    type: 'request-offer-for-walker',
+    walkerId: msg.uuid
+  })
+  firstPeer.send(message)
+}
 
-  if (msg.type === 'answer-from-walker') {
-    firstPeer.send(JSON.stringify(msg))
-  }
+const offerForWalker = (msg) => {
+  walker.send(JSON.stringify(msg.payload))
+}
 
-  if (msg.type === 'ice-candidate-for-walker') {
-    walker.send(JSON.stringify(msg.payload))
-  }
+const answerFromWalkerRelay = (msg) => {
+  firstPeer.send(JSON.stringify({
+    type: 'answer-from-walker-destination',
+    data: msg.payload,
+    walkerId: msg.walkerId
+  }))
+}
 
-  if (msg.type === 'ice-candidate-for-peer') {
-    firstPeer.send(JSON.stringify(msg))
-  }
+const iceCandidateForWalker = (msg) => {
+  walker.send(JSON.stringify(msg.payload))
+}
+
+const iceCandidateForPeer = (msg) => {
+  firstPeer.send(JSON.stringify({
+    type: 'ice-candidate-for-peer',
+    payload: msg.payload,
+    walkerId: msg.uuid
+  }))
 }
