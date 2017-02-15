@@ -1,7 +1,8 @@
 export default {
   iceConfig: {
     iceServers: [
-       { url: 'stun:stun.I.google.com:19302' }
+       { urls: 'stun:stun.I.google.com:19302' }
+       
     ]
   },
 
