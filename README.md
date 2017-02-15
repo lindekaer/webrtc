@@ -18,5 +18,10 @@ sudo apt-get install npm -y
 cd / 
 git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
 cd /webrtc
+git checkout jit-docker
 npm install
 docker pull ubuntu:14.04
+docker build -t test .
+
+## For thesis
+Javascript eventloop - how are we using it on the signaling server?
