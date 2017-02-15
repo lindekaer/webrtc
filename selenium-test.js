@@ -58,7 +58,7 @@ if (type === 'walker') {
         count++
         console.log('Peer spawning, number: ', count)
         driver.executeScript(`window.open('${path}');`)
-        setTimeout(() => { cb(null, count) }, 10)
+        setTimeout(() => { cb(null, count) }, 100)
       },
       () => {
         setTimeout(() => {
