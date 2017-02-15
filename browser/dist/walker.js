@@ -111,14 +111,12 @@ class WalkerPeer {
           const offer = new window.RTCSessionDescription(data);
           this.handleDataChannels(this._nextCon);
           this._nextCon.setRemoteDescription(offer, () => {
-            this._nextCon.createAnswer();
             this._nextCon.onicecandidate = event => {
               if (event.candidate == null) {
                 // TODO: Send end of candidates event
               } else {
                 if (event.candidate) {
                   const jsonOffer = JSON.stringify({
-                    walkerId,
                     type: 'ice-candidate-for-peer',
                     payload: event.candidate,
                     uuid: this._uuid
@@ -127,14 +125,14 @@ class WalkerPeer {
                 }
               }
             };
-            // this._nextCon.createAnswer((answer) => {
-            //   this._nextCon.setLocalDescription(answer)
-            //   channel.send(JSON.stringify({
-            //     type: 'answer-from-walker-relay',
-            //     payload: this._nextCon.localDescription,
-            //     walkerId: this._uuid
-            //   }))
-            // }, errorHandler)
+            this._nextCon.createAnswer(answer => {
+              this._nextCon.setLocalDescription(answer);
+              channel.send(JSON.stringify({
+                type: 'answer-from-walker-relay',
+                payload: this._nextCon.localDescription,
+                walkerId: this._uuid
+              }));
+            }, errorHandler);
           }, errorHandler);
         } else {
           // console.log('Adding ice candidate')

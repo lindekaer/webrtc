@@ -7,9 +7,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      url: 'stun:stun.I.google.com:19302'
-    }, {
-      url: 'turn:numb.viagenie.ca',
+      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] }, {
+      urls: 'turn:numb.viagenie.ca',
       credential: 'muazkh',
       username: 'webrtc@live.com'
     }]
@@ -138,14 +137,12 @@ class WalkerPeer {
           const offer = new window.RTCSessionDescription(data);
           this.handleDataChannels(this._nextCon);
           this._nextCon.setRemoteDescription(offer, () => {
-            this._nextCon.createAnswer();
             this._nextCon.onicecandidate = event => {
               if (event.candidate == null) {
                 // TODO: Send end of candidates event
               } else {
                 if (event.candidate) {
                   const jsonOffer = JSON.stringify({
-                    walkerId,
                     type: 'ice-candidate-for-peer',
                     payload: event.candidate,
                     uuid: this._uuid
@@ -154,14 +151,14 @@ class WalkerPeer {
                 }
               }
             };
-            // this._nextCon.createAnswer((answer) => {
-            //   this._nextCon.setLocalDescription(answer)
-            //   channel.send(JSON.stringify({
-            //     type: 'answer-from-walker-relay',
-            //     payload: this._nextCon.localDescription,
-            //     walkerId: this._uuid
-            //   }))
-            // }, errorHandler)
+            this._nextCon.createAnswer(answer => {
+              this._nextCon.setLocalDescription(answer);
+              channel.send(JSON.stringify({
+                type: 'answer-from-walker-relay',
+                payload: this._nextCon.localDescription,
+                walkerId: this._uuid
+              }));
+            }, errorHandler);
           }, errorHandler);
         } else {
           // console.log('Adding ice candidate')
