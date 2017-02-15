@@ -8,6 +8,7 @@
 
 var WebSocketServer = require('uws').Server
 var wss = new WebSocketServer({ port: 8080 })
+var async = require('async')
 
 /*
 -----------------------------------------------------------------------------------
@@ -34,19 +35,18 @@ wss.on('connection', (ws) => {
 function onMessage (message) {
   const msg = JSON.parse(message)
   if (msg.type === 'joining') {
-    if (Object.keys(peers).length === 0) {
-      console.log('setting first peer')
+    // Ensure to set the first peer
+    if (!firstPeer) {
       firstPeer = this
+      offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
+      return
     }
 
     peers[msg.uuid] = this
-     // If there are any offers, send the first-received to the connecting peer
-    if (offers.length !== 0) {
-      console.log('Sending offer...')
-      var offer = offers.shift()
-      this.send(JSON.stringify(offer))
+
+    while (!sendOfferToPeer(this, message)) {
+      console.log('Retrying...')
     }
-    offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
   }
 
   if (msg.type === 'answer') {
@@ -80,4 +80,12 @@ function onMessage (message) {
 function onClose () {
   connectedCount--
   console.log(`Closed! ${connectedCount} connected.`)
+}
+
+function sendOfferToPeer (peer, message) {
+  var offer = offers.shift()
+  if (!offer) return false
+  this.send(JSON.stringify(offer))
+  offers.push({ payload: message.payload, uuid: message.uuid, type: 'offer' })
+  return true
 }
