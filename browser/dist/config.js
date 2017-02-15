@@ -20,5 +20,5 @@ exports.default = {
     }
   },
 
-  webSocketUrl: 'ws://178.62.51.86:8080/socketserver' //ws://localhost:8080/socketserver'
+  webSocketUrl: 'ws://178.62.51.86:9000/socketserver' //ws://localhost:8080/socketserver'
 };
