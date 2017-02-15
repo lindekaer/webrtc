@@ -123,7 +123,6 @@ function startWalker (cb) {
         }
       }
       lines.forEach(line => {
-
         line = line.split(' - ')
         let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length))
 

@@ -49,22 +49,24 @@ if (type === 'walker') {
 } else {
   driver.get(`file:///app/index.html`)
   let count = 0
-  async.whilst(
-    () => {
-      return count < numberOfPeers
-    },
-    (cb) => {
-      count++
-      console.log('Peer spawning, number: ', count)
-      driver.executeScript(`window.open('${path}');`)
-      setTimeout(() => { cb(null, count) }, 2000)
-    },
-    () => {
-      setTimeout(() => {
-        console.log('**NEXT**')
-      }, 1000)
-    }
-  )
+  setTimeout(() => {
+    async.whilst(
+      () => {
+        return count < numberOfPeers
+      },
+      (cb) => {
+        count++
+        console.log('Peer spawning, number: ', count)
+        driver.executeScript(`window.open('${path}');`)
+        setTimeout(() => { cb(null, count) }, 2000)
+      },
+      () => {
+        setTimeout(() => {
+          console.log('**NEXT**')
+        }, 1000)
+      }
+    )
+  }, 2000)
   driver.wait(doneSignalFired)
   driver.quit()
 }

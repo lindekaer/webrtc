@@ -34,7 +34,7 @@ wss.on('connection', (ws) => {
 function onMessage (message) {
   const msg = JSON.parse(message)
   if (msg.type === 'joining') {
-    if (connectedCount === 1) {
+    if (Object.keys(peers).length === 0) {
       console.log('setting first peer')
       firstPeer = this
     }

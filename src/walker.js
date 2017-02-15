@@ -74,6 +74,8 @@ class WalkerPeer {
       this.handleDataChannels(this._currentCon)
       await this._currentCon.setRemoteDescription(offer)
       const answer = await this._currentCon.createAnswer()
+      console.log('Answer:')
+      console.log(answer)
       this._currentCon.setLocalDescription(answer)
       this._currentCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {

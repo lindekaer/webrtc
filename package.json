@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "watch": "chokidar 'src/*.js' -c 'npm run build'",
-    "build": "npm run transpile && npm run bundle && npm run inlineHtml",
+    "build": "npm run transpile && npm run bundle && npm run inlineHtml && npm run inlineHtmlLocal",
     "transpile": "babel src --out-dir dist",
     "test": "npm run transpile && node dist/run.js 5",
     "inlineHtml": "inline-assets peer.html peer-inlined.html; inline-assets walker.html walker-inlined.html",
+    "inlineHtmlLocal": "cp walker-inlined.html walker-inlined.local.html && replace 'SIGNALING_URL' 'ws://178.62.51.86:8080/socketserver' walker-inlined.local.html",
     "bundle": "browserify ./dist/peer.js -o ./dist/peer-bundled.js && browserify ./dist/walker.js -o ./dist/walker-bundled.js",
     "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --mode spawn"
   },
@@ -26,6 +27,7 @@
     "inline-assets": "1.1.2",
     "inliner": "1.10.1",
     "ms": "0.7.2",
+    "replace": "0.3.0",
     "sdp-transform": "1.7.0",
     "selenium-webdriver": "3.0.1",
     "uuid": "3.0.1",
