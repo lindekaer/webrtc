@@ -55,7 +55,9 @@ function onMessage (message) {
     case 'ice-candidate-for-peer':
       iceCandidateForPeer(msg)
       break
-    default: console.log('No message type')
+    default: 
+      console.log('No message type')
+      console.log(message)
   }
 }
 

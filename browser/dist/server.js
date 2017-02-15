@@ -59,6 +59,7 @@ function onMessage(message) {
       break;
     default:
       console.log('No message type');
+      console.log(message);
   }
 }
 

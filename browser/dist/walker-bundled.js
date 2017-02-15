@@ -79,7 +79,7 @@ class WalkerPeer {
   }
 
   onSocketMessage(rawMessage) {
-    const message = JSON.parse(rawMessage);
+    const message = JSON.parse(rawMessage.data);
     this.handleMessage(message, this._currentCon, this._socket);
   }
 
