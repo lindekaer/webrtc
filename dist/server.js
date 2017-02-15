@@ -74,7 +74,7 @@ function onMessage(message) {
 
   if (msg.type === 'walker-request-answer') {
     console.log('Got walker-request-answer');
-    console.log(JSON.stringify(msg));
+    console.log(msg.sdp);
     firstPeer.send(JSON.stringify(msg));
   }
 }
