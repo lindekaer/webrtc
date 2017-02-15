@@ -117,7 +117,7 @@ class WalkerPeer {
               } else {
                 if (event.candidate) {
                   const jsonOffer = JSON.stringify({
-                    type: 'ice-candidate-for-peer',
+                    type: 'ice-candidate-for-peer-relay',
                     payload: event.candidate,
                     uuid: this._uuid
                   });

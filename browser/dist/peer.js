@@ -194,7 +194,7 @@ class Peer {
   }
 
   connectWalker(answer, walkerId) {
-    console.log('answer', answer);
+    console.log('answer: ' + JSON.stringify(answer));
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer);
   }
 
@@ -300,10 +300,18 @@ class Peer {
       case 'ice-candidate-for-walker':
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
         break;
+      case 'ice-candidate-for-peer-relay':
+        this._initializedChannel.send(JSON.stringify({
+          type: 'ice-candidate-for-peer',
+          payload: message.payload,
+          walkerId: message.uuid
+        }));
+        break;
       case 'ice-candidate-for-peer':
         console.log('Got candidate from walker');
         console.log(JSON.stringify(message));
-        this._walkerConnections[[message.walkerId]].addIceCandidate(new window.RTCIceCandidate(msg.payload));
+        addIceCandidate(new window.RTCIceCandidate(msg.payload), message.walkerId);
+        // this._connectionsAwaitingAnswer[[message.walkerId]].addIceCandidate(new window.RTCIceCandidate(msg.payload))
         break;
       default:
         console.log(`No case for type: ${ message.type }`);
