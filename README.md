@@ -11,11 +11,12 @@ touch ~/.bash_aliases
 echo "alias c=clear" >> ~/.bash_aliases
 echo "alias ll=ls -l" >> ~/.bash_aliases
 echo "alias h=cd" >> ~/.bash_aliases
-cd / 
-git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
-cd /webrtc
 sudo apt-get update -y
 sudo apt-get install nodejs -y
 sudo apt-get install nodejs-legacy -y
 sudo apt-get install npm -y
+cd / 
+git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
+cd /webrtc
 npm install
+docker pull ubuntu:14.04

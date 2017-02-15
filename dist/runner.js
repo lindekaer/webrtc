@@ -26,6 +26,10 @@ var _ms = require('ms');
 
 var _ms2 = _interopRequireDefault(_ms);
 
+var _fs = require('fs');
+
+var _fs2 = _interopRequireDefault(_fs);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // node dist/runner.js --num-containers 2 --num-peers 10 --signaling-url ws://192.168.1.144:8080/socketserver
@@ -38,13 +42,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 -----------------------------------------------------------------------------------
 */
 
-const args = (0, _minimist2.default)(process.argv.slice(2)); /*
-                                                             -----------------------------------------------------------------------------------
-                                                             |
-                                                             | Imports
-                                                             |
-                                                             -----------------------------------------------------------------------------------
-                                                             */
+/*
+-----------------------------------------------------------------------------------
+|
+| Imports
+|
+-----------------------------------------------------------------------------------
+*/
+
+const args = (0, _minimist2.default)(process.argv.slice(2));
 
 const NUM_CONTAINERS = args['num-containers'] || 10;
 const NUM_PEERS = args['num-peers'] || 20;
@@ -52,7 +58,7 @@ const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketser
 const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${ _uuid2.default.v1() }`;
-const spawns = [];
+const DATA_SHEET_PATH = _path2.default.join(__dirname, '..', 'data', args['output-file'] || `${ Date.now() }_test_result.data`);
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -90,14 +96,12 @@ if (MODE === 'walker') {
 
 function createDockerImage(cb) {
   const child = (0, _child_process.spawn)('docker', ['build', '-t', DOCKER_IMAGE_ID, '.']);
-  spawns.push(child);
   child.on('exit', cb);
 }
 
 function createBootPeer(cb) {
   const UUID = _uuid2.default.v1();
-  const child = (0, _child_process.spawn)('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID]);
-  spawns.push(child);
+  (0, _child_process.spawn)('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID]);
   setTimeout(cb, 5000);
 }
 
@@ -111,7 +115,6 @@ function runContainer(currentNum, type, cb) {
 
   // Spawn child process
   const child = (0, _child_process.spawn)('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID]);
-  spawns.push(child);
   child.stdout.on('data', function (data) {
     console.log(data.toString());
     if (data.toString().indexOf('**NEXT**') !== -1) {
@@ -122,8 +125,8 @@ function runContainer(currentNum, type, cb) {
 
 function startWalker(cb) {
   const child = (0, _child_process.spawn)('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
-  spawns.push(child);
   let numConnections = 0;
+  let durations = [];
   let timeTotal = 0;
   let timeMin = 0;
   let timeMax = 0;
@@ -152,6 +155,10 @@ function startWalker(cb) {
           if (duration < timeMin) timeMin = duration;
           if (duration > timeMax) timeMax = duration;
 
+          durations.push(duration);
+
+          _fs2.default.appendFile(DATA_SHEET_PATH, `${ duration }\n`, err => {});
+
           timeTotal += duration;
 
           numConnections++;
@@ -161,23 +168,29 @@ function startWalker(cb) {
         }
 
         prevTime = timestamp;
+
+        if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
+          const mean = calculateMean(timeTotal, numConnections);
+          const variance = calculateVariance(durations, mean);
+          const standardDeviation = calculateStandardDeviation(variance);
+
+          console.log('');
+          console.log('-------- ⚡️  Test completed ⚡️ --------');
+          console.log('');
+          console.log(`Number of connection handovers: ${ _colors2.default.yellow.bold(numConnections) }`);
+          console.log(`Min (fastest handover):         ${ _colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms') }`);
+          console.log(`Max (slowest handover):         ${ _colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms') }`);
+          console.log(`Mean:                           ${ _colors2.default.green.bold.underline(`${ mean.toFixed(2) }`) }`);
+          console.log(`Variance:                       ${ _colors2.default.green.bold.underline(`${ variance.toFixed(2) }`) }`);
+          console.log(`Standard deviation:             ${ _colors2.default.green.bold.underline(`${ standardDeviation.toFixed(2) }`) }`);
+          console.log('');
+
+          child.kill();
+          cb();
+        }
       });
     }
   });
-
-  setTimeout(() => {
-    console.log('');
-    console.log('-------- ⚡️  Test completed ⚡️ --------');
-    console.log('');
-    console.log(`Number of connection handovers: ${ _colors2.default.yellow.bold(numConnections) }`);
-    console.log(`Fastest connection setup time:  ${ _colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms') }`);
-    console.log(`Slowest connection setup time:  ${ _colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms') }`);
-    console.log(`Avg. connection setup time:     ${ _colors2.default.green.bold.underline((timeTotal / numConnections).toFixed(2) + ' ms') }`);
-    console.log('');
-
-    child.kill();
-    cb();
-  }, TIMEOUT);
 }
 
 function clean() {
@@ -196,4 +209,21 @@ function clean() {
 
 function sleep(millis, cb) {
   setTimeout(cb, millis);
+}
+
+function calculateMean(total, number) {
+  return total / number;
+}
+
+function calculateVariance(inputs, mean) {
+  const number = inputs.length;
+  let total = 0;
+  for (const input of inputs) {
+    total += Math.pow(input - mean, 2);
+  }
+  return total / number;
+}
+
+function calculateStandardDeviation(variance) {
+  return Math.sqrt(variance);
 }

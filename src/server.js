@@ -8,7 +8,6 @@
 
 var WebSocketServer = require('uws').Server
 var wss = new WebSocketServer({ port: 8080 })
-var async = require('async')
 
 /*
 -----------------------------------------------------------------------------------
@@ -62,7 +61,6 @@ function onMessage (message) {
       type: 'request-offer-for-walker',
       walkerId: msg.uuid
     })
-    console.log('Now sending: ', mess)
     firstPeer.send(mess)
   }
 
@@ -71,8 +69,6 @@ function onMessage (message) {
   }
 
   if (msg.type === 'walker-request-answer') {
-    console.log('Got walker-request-answer')
-    console.log(msg.payload.sdp)
     firstPeer.send(JSON.stringify(msg))
   }
 }
@@ -80,6 +76,12 @@ function onMessage (message) {
 function onClose () {
   connectedCount--
   console.log(`Closed! ${connectedCount} connected.`)
+  if (connectedCount === 0) {
+    firstPeer = undefined
+    walker = undefined
+    peers = {}
+    offers = []
+  }
 }
 
 function sendOfferToPeer (peer, message) {

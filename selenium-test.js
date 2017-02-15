@@ -63,7 +63,7 @@ if (type === 'walker') {
       () => {
         setTimeout(() => {
           console.log('**NEXT**')
-        }, 1000)
+        }, 500)
       }
     )
   }, 2000)
