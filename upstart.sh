@@ -36,6 +36,3 @@ echo "UUID: ${uuid}"
 echo "--->"
 
 node /app/selenium-test.js $type $number_peers $guid
-
-echo "hi"
-echo "ho"
