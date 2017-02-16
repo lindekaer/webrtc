@@ -18,8 +18,9 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -----------------------------------------------------------------------------------
                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
 /*
- This version is the beautified version with full trickle implemented and
- the ability to togle between using trickle ice and not using it.
+ This version contains the Artificially Constructed ICE Candidates,
+ the connection times as fast as sending the localhost candidate. This eleminates
+ the longer time of gathering candidates.
 */
 
 /*

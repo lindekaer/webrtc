@@ -40,6 +40,7 @@ class WalkerPeer {
     this._uuid = _uuid2.default.v1();
     this.iceIds = [];
     this.myIds = [];
+    this._requestTimeSend = Date.now();
     this.connectToServer();
   }
 
@@ -66,6 +67,7 @@ class WalkerPeer {
       type: 'walker-request',
       uuid: this._uuid
     });
+    this._requestTimeSend = Date.now();
     this._socket.send(msg);
   }
 
@@ -219,7 +221,10 @@ class WalkerPeer {
         this._currentCon = this._nextCon;
         this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
         this._nodeCount++;
-        console.log('Connection established to node ' + this._nodeCount);
+        // console.log(this._requestTimeSend)
+        console.log(`Connection established to node ${ this._nodeCount }, took: ${ JSON.stringify(Date.now() - this._requestTimeSend) } ms`);
+        // console.log('Sending next request.')
+        this._requestTimeSend = Date.now();
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
