@@ -30,6 +30,7 @@ class WalkerPeer {
   constructor () {
     this._uuid = uuid.v1()
     this.iceIds = []
+    this.myIds = []
     this.connectToServer()
   }
 
@@ -62,7 +63,7 @@ class WalkerPeer {
   handleMessage (message, peerConnection, channel) {
     // console.log('message: ' + JSON.stringify(message))
     if (message.iceIds) {
-      console.log('Got offer')
+      // console.log('Got offer')
       // console.log('Got ids too: ' + JSON.stringify(message.iceIds[1]))
       this.iceIds = message.iceIds
       const offer = new window.RTCSessionDescription(message.payload)
@@ -74,26 +75,40 @@ class WalkerPeer {
           } else {
             if (event.candidate) {
               if (this.isHostIceCandidate(event.candidate.candidate)) {
-                console.log('Host candidate, sending')
+                // console.log('Host candidate, sending')
                 const jsonOffer = JSON.stringify({
                   type: 'ice-candidate-for-peer-relay',
                   payload: event.candidate,
                   uuid: this._uuid
                 })
                 channel.send(jsonOffer)
-                // Create artificial ICE
-                var ids = this.getIdStringsFromCandidate(event.candidate.candidate)
-                var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, ids)
-                console.log('Sending artificial ICE')
-                const articificalIce = JSON.stringify({
-                  type: 'ice-candidate-for-peer-relay',
-                  payload: event.candidate,
-                  uuid: this._uuid
-                })
-                channel.send(articificalIce)
+                if (this.myIds.length > 0) {
+                  // Create artificial ICE
+                  var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, this.myIds)
+                  // console.log('Sending artificial ICE')
+                  const articificalIce = JSON.stringify({
+                    type: 'ice-candidate-for-peer-relay',
+                    payload: candidate,
+                    uuid: this._uuid
+                  })
+                  channel.send(articificalIce)
+                } else {
+                  // console.log('Cant send AICE yet')
+                }
+                
               } else {
-                console.log('Not host candidate, not sending')
-                console.log(JSON.stringify(event.candidate))
+                if (this.myIds.length === 0) {
+                  // console.log('Not host candidate, sending anyway')
+                  const jsonOffer = JSON.stringify({
+                    type: 'ice-candidate-for-peer-relay',
+                    payload: event.candidate,
+                    uuid: this._uuid
+                  })
+                  channel.send(jsonOffer)
+                  this.myIds.push(this.getIdStringsFromCandidate(event.candidate.candidate))
+                } else {
+                  // console.log('Not host candidate, not sending')
+                }
               }
             }
           }
@@ -108,11 +123,11 @@ class WalkerPeer {
         }, errorHandler)
       }, errorHandler)
     } else {
-      console.log(JSON.stringify(message))
+      // console.log(JSON.stringify(message))
       if (this.isHostIceCandidate(message.candidate)) {
         var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[1])
         // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
-        console.log('Adding artificial ICE now')
+        // console.log('Adding artificial ICE now')
         peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
       }
       // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
@@ -177,7 +192,7 @@ class WalkerPeer {
       localIndex = candidate.indexOf(' ', localIndex+1)
     }
     var substring = candidate.substring(index, localIndex)
-    console.log('Found string: ' + substring)
+    // console.log('Found string: ' + substring)
     return substring
   }
 
