@@ -96,10 +96,11 @@ class WalkerPeer {
   }
 
   handleMessage(message, peerConnection, channel) {
-
     // console.log('message: ' + JSON.stringify(message))
     if (message.iceIds) {
       console.log('Got offer');
+      // console.log('Got ids too: ' + JSON.stringify(message.iceIds[1]))
+      this.iceIds = message.iceIds;
       const offer = new window.RTCSessionDescription(message.payload);
       this.handleDataChannels(peerConnection);
       peerConnection.setRemoteDescription(offer, () => {
@@ -125,22 +126,39 @@ class WalkerPeer {
             walkerId: this._uuid
           }));
         }, errorHandler);
-        console.log('Got ids too: ' + JSON.stringify(message.iceIds[1]));
-        this.iceIds = message.iceIds;
       }, errorHandler);
     } else {
       console.log(JSON.stringify(message));
-      this.constructIceStringsFromLocalHostCandidate(message.candidate);
-      peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
+      if (this.isHostIceCandidate(message.candidate)) {
+        var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate);
+        // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
+        console.log('Adding artificial ICE now');
+        peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate));
+      }
+      // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
     }
+  }
+
+  isHostIceCandidate(candidate) {
+    return candidate.indexOf('host') > -1;
   }
 
   constructIceStringsFromLocalHostCandidate(candidate) {
     // Get port number
     var port = this.findPortInCandidate(candidate);
-    console.log('Port is: ' + port);
+    // console.log('Port is: ' + port)
     var ufrag = this.findUfragInCandidate(candidate);
-    console.log('Ufrag is: ' + ufrag);
+    // console.log('Ufrag is: ' + ufrag)
+    var ip = this.findLocalIpFromCandidate(candidate);
+    // console.log('IP is: ' + ip)
+    var candidateString = `${ this.iceIds[1] } ${ port } typ srflx raddr ${ ip } rport ${ port } generation 0 ufrag ${ ufrag } network-cost 50`;
+    var candidate = {
+      candidate: candidateString,
+      sdpMid: 'data',
+      sdpMLineIndex: 0
+    };
+    // console.log(JSON.stringify(candidate))
+    return candidate;
   }
 
   findPortInCandidate(candidate) {
@@ -160,6 +178,16 @@ class WalkerPeer {
     startIndex = ufragIndex + 6;
     endIndex = startIndex + 4;
     return candidate.substring(startIndex, endIndex);
+  }
+
+  findLocalIpFromCandidate(candidate) {
+    var startIndex = 0;
+    var endIndex = 0;
+    for (var i = 0; i < 4; i++) {
+      startIndex = candidate.indexOf(' ', startIndex + 1);
+    }
+    endIndex = candidate.indexOf(' ', startIndex + 1);
+    return candidate.substring(startIndex + 1, endIndex);
   }
 
   // 'walker-request-answer'

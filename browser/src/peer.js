@@ -173,6 +173,7 @@ class Peer {
   }
 
   connectToWalker (answer, walkerId) {
+    console.log('Answer from walker: ' + answer)
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer)
   }
 
