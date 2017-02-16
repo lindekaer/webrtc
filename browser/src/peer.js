@@ -169,7 +169,7 @@ class Peer {
   }
 
   addIceCandidateForWalkerConnection (candidate, walkerId) {
-    console.log('Candidate: ' + candidate)
+    console.log('Candidate: ' + JSON.stringify(candidate))
     this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate)
   }
 
