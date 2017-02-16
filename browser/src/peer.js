@@ -266,7 +266,7 @@ class Peer {
     var startIndex = 0, index, strings = [];
     while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
       var localIndex = index
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < 5; i++) {
         localIndex = offer.indexOf(' ', localIndex+1)
       }
       var substring = offer.substring(index, localIndex)

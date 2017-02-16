@@ -65,6 +65,7 @@ console.log = msg => {
 class WalkerPeer {
   constructor() {
     this._uuid = _uuid2.default.v1();
+    this.iceIds = [];
     this.connectToServer();
   }
 
@@ -96,8 +97,9 @@ class WalkerPeer {
 
   handleMessage(message, peerConnection, channel) {
 
-    console.log('message: ' + JSON.stringify(message));
+    // console.log('message: ' + JSON.stringify(message))
     if (message.iceIds) {
+      console.log('Got offer');
       const offer = new window.RTCSessionDescription(message.payload);
       this.handleDataChannels(peerConnection);
       peerConnection.setRemoteDescription(offer, () => {
@@ -123,11 +125,26 @@ class WalkerPeer {
             walkerId: this._uuid
           }));
         }, errorHandler);
-        console.log('Got ids too: ' + JSON.stringify(message.iceIds));
+        console.log('Got ids too: ' + JSON.stringify(message.iceIds[1]));
+        this.iceIds = message.iceIds;
       }, errorHandler);
     } else {
+      console.log(JSON.stringify(message));
+      this.constructIceStringsFromLocalHostCandidate(message.candidate);
       peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
     }
+  }
+
+  constructIceStringsFromLocalHostCandidate(candidate) {
+    // Get port number
+    var startIndex = 0;
+    var endIndex = 0;
+    for (var i = 0; i < 5; i++) {
+      startIndex = offer.indexOf(' ', startIndex + 1);
+    }
+    endIndex = offer.indexOf(' ', startIndex + 1);
+    var substring = offer.substring(startIndex + 1, endIndex);
+    console.log('Port is: ', substring);
   }
 
   // 'walker-request-answer'
