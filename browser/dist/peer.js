@@ -192,7 +192,7 @@ class Peer {
   }
 
   connectToWalker(answer, walkerId) {
-    console.log('Answer from walker: ' + answer);
+    console.log('Answer from walker: ' + JSON.stringify(answer));
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer);
   }
 
