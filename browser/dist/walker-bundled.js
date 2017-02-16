@@ -126,7 +126,6 @@ class WalkerPeer {
         console.log('Got ids too: ' + JSON.stringify(message.iceIds));
       }, errorHandler);
     } else {
-      console.log(JSON.stringify(message));
       peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
     }
   }
