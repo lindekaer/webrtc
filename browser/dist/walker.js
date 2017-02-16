@@ -110,14 +110,29 @@ class WalkerPeer {
 
   constructIceStringsFromLocalHostCandidate(candidate) {
     // Get port number
+    var port = this.findPortInCandidate(candidate);
+    console.log('Port is: ' + port);
+    var ufrag = this.findUfragInCandidate(candidate);
+    console.log('Ufrag is: ' + ufrag);
+  }
+
+  findPortInCandidate(candidate) {
     var startIndex = 0;
     var endIndex = 0;
     for (var i = 0; i < 5; i++) {
-      startIndex = offer.indexOf(' ', startIndex + 1);
+      startIndex = candidate.indexOf(' ', startIndex + 1);
     }
-    endIndex = offer.indexOf(' ', startIndex + 1);
-    var substring = offer.substring(startIndex + 1, endIndex);
-    console.log('Port is: ', substring);
+    endIndex = candidate.indexOf(' ', startIndex + 1);
+    return candidate.substring(startIndex + 1, endIndex);
+  }
+
+  findUfragInCandidate(candidate) {
+    var startIndex = 0;
+    var endIndex = 0;
+    var ufragIndex = candidate.indexOf('ufrag', startIndex);
+    startIndex = ufragIndex + 6;
+    endIndex = startIndex + 4;
+    return candidate.substring(startIndex, endIndex);
   }
 
   // 'walker-request-answer'
