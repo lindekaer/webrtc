@@ -6,9 +6,7 @@
 -----------------------------------------------------------------------------------
 */
 /*
- This version contains the Artificially Constructed ICE Candidates,
- the connection times as fast as sending the localhost candidate. 
- This eleminates the longer time of gathering candidates.
+
 */
 
 /*
