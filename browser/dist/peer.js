@@ -81,6 +81,7 @@ class Peer {
 
     this.setupPeerConnection(this._entryCon);
     this.setupPeerConnection(this._extensionCon);
+    console.log('ConnectionState: ' + this._extensionCon.connectionState);
     this.joinNetwork();
   }
 
@@ -208,6 +209,7 @@ class Peer {
     var _this4 = this;
 
     return _asyncToGenerator(function* () {
+      console.log('connectionState: ' + _this4._entryCon.connectionState);
       const offer = new window.RTCSessionDescription(message.payload);
       console.log(JSON.stringify(message.payload.sdp));
       _this4.iceIdsForNextPeer = _this4.getIdStringsFromOffer(JSON.stringify(message.payload.sdp));
@@ -252,6 +254,7 @@ class Peer {
         this.connectToWalker(answer, message.walkerId);
         break;
       case 'get-offer-from-next-peer':
+
         this._extensionChannel.send(JSON.stringify({
           type: 'request-offer-for-walker',
           walkerId: message.walkerId
