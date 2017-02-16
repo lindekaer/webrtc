@@ -109,12 +109,28 @@ class WalkerPeer {
             // TODO: Send end of candidates event
           } else {
             if (event.candidate) {
-              const jsonOffer = JSON.stringify({
-                type: 'ice-candidate-for-peer-relay',
-                payload: event.candidate,
-                uuid: this._uuid
-              });
-              channel.send(jsonOffer);
+              if (this.isHostIceCandidate(event.candidate.candidate)) {
+                console.log('Host candidate, sending');
+                const jsonOffer = JSON.stringify({
+                  type: 'ice-candidate-for-peer-relay',
+                  payload: event.candidate,
+                  uuid: this._uuid
+                });
+                channel.send(jsonOffer);
+                // Create artificial ICE
+                var ids = this.getIdStringsFromCandidate(event.candidate.candidate);
+                var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, ids);
+                console.log('Sending artificial ICE');
+                const articificalIce = JSON.stringify({
+                  type: 'ice-candidate-for-peer-relay',
+                  payload: event.candidate,
+                  uuid: this._uuid
+                });
+                channel.send(articificalIce);
+              } else {
+                console.log('Not host candidate, not sending');
+                console.log(JSON.stringify(event.candidate));
+              }
             }
           }
         };
@@ -130,7 +146,7 @@ class WalkerPeer {
     } else {
       console.log(JSON.stringify(message));
       if (this.isHostIceCandidate(message.candidate)) {
-        var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate);
+        var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[1]);
         // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
         console.log('Adding artificial ICE now');
         peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate));
@@ -143,7 +159,7 @@ class WalkerPeer {
     return candidate.indexOf('host') > -1;
   }
 
-  constructIceStringsFromLocalHostCandidate(candidate) {
+  constructIceStringsFromLocalHostCandidate(candidate, ids) {
     // Get port number
     var port = this.findPortInCandidate(candidate);
     // console.log('Port is: ' + port)
@@ -151,7 +167,7 @@ class WalkerPeer {
     // console.log('Ufrag is: ' + ufrag)
     var ip = this.findLocalIpFromCandidate(candidate);
     // console.log('IP is: ' + ip)
-    var candidateString = `${ this.iceIds[1] } ${ port } typ srflx raddr ${ ip } rport ${ port } generation 0 ufrag ${ ufrag } network-cost 50`;
+    var candidateString = `${ ids } ${ port } typ srflx raddr ${ ip } rport ${ port } generation 0 ufrag ${ ufrag } network-cost 50`;
     var candidate = {
       candidate: candidateString,
       sdpMid: 'data',
@@ -188,6 +204,18 @@ class WalkerPeer {
     }
     endIndex = candidate.indexOf(' ', startIndex + 1);
     return candidate.substring(startIndex + 1, endIndex);
+  }
+
+  getIdStringsFromCandidate(candidate) {
+    var startIndex = 0,
+        index;
+    var localIndex = index;
+    for (var i = 0; i < 5; i++) {
+      localIndex = candidate.indexOf(' ', localIndex + 1);
+    }
+    var substring = candidate.substring(index, localIndex);
+    console.log('Found string: ' + substring);
+    return substring;
   }
 
   // 'walker-request-answer'

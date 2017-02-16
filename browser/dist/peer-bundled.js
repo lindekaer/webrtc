@@ -215,6 +215,7 @@ class Peer {
   }
 
   addIceCandidateForWalkerConnection(candidate, walkerId) {
+    console.log('Candidate: ' + candidate);
     this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate);
   }
 
