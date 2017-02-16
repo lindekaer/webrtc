@@ -234,6 +234,7 @@ class Peer {
 
     return _asyncToGenerator(function* () {
       const offer = new window.RTCSessionDescription(message.payload);
+      console.log(JSON.stringify(message.payload));
       yield _this4._extensionCon.setRemoteDescription(offer);
       _this4._extensionCon.onicecandidate = function (event) {
         if (event.candidate == null) {

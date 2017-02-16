@@ -181,6 +181,7 @@ class Peer {
 
   async sendAnswerToJoiningPeer(message) {
     const offer = new window.RTCSessionDescription(message.payload)
+    console.log(JSON.stringify(message.payload))
     await this._extensionCon.setRemoteDescription(offer)
     this._extensionCon.onicecandidate = (event) => {
       if (event.candidate == null) {
