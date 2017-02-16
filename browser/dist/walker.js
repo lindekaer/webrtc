@@ -68,6 +68,7 @@ class WalkerPeer {
   }
 
   handleMessage(message, peerConnection, channel) {
+
     console.log('message: ' + JSON.stringify(message));
     if (message.iceIds) {
       const offer = new window.RTCSessionDescription(message.payload);
@@ -98,8 +99,8 @@ class WalkerPeer {
         console.log('Got ids too: ' + JSON.stringify(message.iceIds));
       }, errorHandler);
     } else {
-      console.log(JSON.stringify(message.payload));
-      peerConnection.addIceCandidate(new window.RTCIceCandidate(message.payload));
+      console.log(JSON.stringify(message));
+      peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
     }
   }
 
