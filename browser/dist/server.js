@@ -24,6 +24,7 @@ var lastPeer;
 var firstPeer;
 var connectedCount = 0;
 var walker;
+var iceIdsForNextPeer = [];
 
 wss.on('connection', ws => {
   connectedCount++;
@@ -73,6 +74,7 @@ const joining = (msg, socket) => {
   if (!lastPeer) {
     firstPeer = socket;
     lastPeer = socket;
+    iceIdsForNextPeer = getIdStringsFromOffer(JSON.stringify(msg.payload.sdp));
     return;
   }
   lastPeer.send(JSON.stringify(msg));
@@ -95,7 +97,10 @@ const walkerRequest = (msg, socket) => {
 };
 
 const offerForWalker = msg => {
-  walker.send(JSON.stringify(msg.payload));
+  walker.send(JSON.stringify({
+    payload: msg.payload,
+    iceIds: iceIdsForNextPeer
+  }));
 };
 
 const answerFromWalkerRelay = msg => {
@@ -116,4 +121,20 @@ const iceCandidateForPeer = msg => {
     payload: msg.payload,
     walkerId: msg.uuid
   }));
+};
+
+const getIdStringsFromOffer = offer => {
+  var startIndex = 0,
+      index,
+      strings = [];
+  while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
+    var localIndex = index;
+    for (var i = 0; i < 4; i++) {
+      localIndex = offer.indexOf(' ', localIndex + 1);
+    }
+    var substring = offer.substring(index, localIndex);
+    strings.push(substring);
+    startIndex = index + 'candidate:'.length;
+  }
+  return strings;
 };

@@ -54,6 +54,7 @@ class Peer {
     this._uuid = _uuid2.default.v1();
     this._connectionsAwaitingAnswer = {};
     this._walkerConnections = {};
+    this.iceIdsForNextPeer = [];
     this.connectToServer();
   }
 
@@ -207,7 +208,8 @@ class Peer {
 
     return _asyncToGenerator(function* () {
       const offer = new window.RTCSessionDescription(message.payload);
-      console.log(JSON.stringify(message.payload));
+      console.log(JSON.stringify(message.payload.sdp));
+      _this4.iceIdsForNextPeer = _this4.getIdStringsFromOffer(JSON.stringify(message.payload.sdp));
       yield _this4._extensionCon.setRemoteDescription(offer);
       _this4._extensionCon.onicecandidate = function (event) {
         if (event.candidate == null) {
@@ -258,7 +260,10 @@ class Peer {
         this.createNewWalkerConnection(message.walkerId, channel);
         break;
       case 'offer-for-walker':
-        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
+        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify({
+          payload: message.payload,
+          iceIds: this.iceIdsForNextPeer
+        }));
         break;
       case 'ice-candidate-for-walker':
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
@@ -284,6 +289,24 @@ class Peer {
         console.log(`No case for type: ${ message.type }`);
     }
   }
+
+  getIdStringsFromOffer(offer) {
+    var startIndex = 0,
+        index,
+        strings = [];
+    while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
+      var localIndex = index;
+      for (var i = 0; i < 4; i++) {
+        localIndex = offer.indexOf(' ', localIndex + 1);
+      }
+      var substring = offer.substring(index, localIndex);
+      console.log('Found string: ' + substring);
+      strings.push(substring);
+      startIndex = index + 'candidate:'.length;
+    }
+    return strings;
+  }
+
 }
 
 const newPeer = new Peer();

@@ -68,8 +68,9 @@ class WalkerPeer {
   }
 
   handleMessage(message, peerConnection, channel) {
-    if (message.sdp) {
-      const offer = new window.RTCSessionDescription(message);
+    console.log('message: ' + JSON.stringify(message));
+    if (message.iceIds) {
+      const offer = new window.RTCSessionDescription(message.payload);
       this.handleDataChannels(peerConnection);
       peerConnection.setRemoteDescription(offer, () => {
         peerConnection.onicecandidate = event => {
@@ -94,10 +95,11 @@ class WalkerPeer {
             walkerId: this._uuid
           }));
         }, errorHandler);
+        console.log('Got ids too: ' + JSON.stringify(message.iceIds));
       }, errorHandler);
     } else {
-      console.log(JSON.stringify(message));
-      peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
+      console.log(JSON.stringify(message.payload));
+      peerConnection.addIceCandidate(new window.RTCIceCandidate(message.payload));
     }
   }
 
