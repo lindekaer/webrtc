@@ -20,6 +20,19 @@ git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
 cd /webrtc
 git checkout jit-docker
 npm install
+npm run build
+sudo apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+curl -fsSL https://apt.dockerproject.org/gpg | sudo apt-key add -
+sudo add-apt-repository \
+       "deb https://apt.dockerproject.org/repo/ \
+       ubuntu-$(lsb_release -cs) \
+       main"
+sudo apt-get -y install docker-engine
+sudo apt-get -y install docker.io
 docker pull ubuntu:14.04
 docker build -t test .
 
