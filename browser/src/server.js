@@ -44,12 +44,12 @@ function onMessage (message) {
     case 'walker-joining-offer':
       walkerJoiningOffer(msg, this)
       break
-    case 'answer-for-walker' || 'walker-joining-answer':
+    case 'answer-for-walker':
       answerForWalker(msg)
       break
-    // case 'walker-request':
-    //   walkerRequest(msg, this)
-    //   break
+    case 'walker-joining-answer':
+      answerForWalker(msg)
+      break
     // case 'offer-for-walker':
     //   offerForWalker(msg)
     //   break
@@ -59,10 +59,13 @@ function onMessage (message) {
     case 'ice-candidate-for-walker':
       iceCandidateForWalker(msg)
       break
-    case 'ice-candidate-for-peer-relay' || 'walker-joining-ice-candidate':
+    case 'ice-candidate-for-peer-relay':
       iceCandidateForPeer(msg)
       break
-    default: 
+    case 'walker-joining-ice-candidate':
+      iceCandidateForPeer(msg)
+      break
+    default:
       console.log('No message type')
       console.log(message)
   }

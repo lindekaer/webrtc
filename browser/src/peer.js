@@ -281,16 +281,17 @@ class Peer {
   }
 
   getIdStringsFromOffer (offer) {
-    var startIndex = 0, index, strings = [];
+    var startIndex = 0
+    var index
+    var strings = []
     while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
       var localIndex = index
       for (var i = 0; i < 5; i++) {
-        localIndex = offer.indexOf(' ', localIndex+1)
+        localIndex = offer.indexOf(' ', localIndex + 1)
       }
       var substring = offer.substring(index, localIndex)
-      console.log('Found string: ' + substring)
-      strings.push(substring);
-      startIndex = index + 'candidate:'.length;
+      strings.push(substring)
+      startIndex = index + 'candidate:'.length
     }
     return strings
   }

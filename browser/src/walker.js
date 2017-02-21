@@ -13,6 +13,7 @@ import config from './config'
 
 const Log = console.log
 console.log = (msg) => {
+  Log(msg)
   const data = Date.now() + ' - ' + msg
   Log(data)
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
@@ -42,15 +43,6 @@ class WalkerPeer {
   }
 
   onSocketOpen () {
-    this.init()
-  }
-
-  onSocketMessage (rawMessage) {
-    const message = JSON.parse(rawMessage.data)
-    this.handleMessage(message, this._currentCon, this._signalingChannel)
-  }
-
-  init () {
     this._firstPeerCon = new window.RTCPeerConnection(config.iceConfig)
     this._firstPeerCannel
     this._lastPeerCon = new window.RTCPeerConnection(config.iceConfig)
@@ -60,11 +52,16 @@ class WalkerPeer {
     this.joinNetwork()
   }
 
+  onSocketMessage (rawMessage) {
+    const message = JSON.parse(rawMessage.data)
+    this.handleMessage(message, this._currentCon, this._signalingChannel)
+  }
+
   // Connect to to the first peer through the signaling server
   async joinNetwork () {
     try {
       // Create data channel
-      const dataChannel = this._firstPeerCon.createDataChannel()
+      const dataChannel = this._firstPeerCon.createDataChannel('data-channel')
       dataChannel.onmessage = (message) => {
         this.handleMessage(message.data, dataChannel)
       }
@@ -80,11 +77,11 @@ class WalkerPeer {
       this._firstPeerCon.onicecandidate = (event) => {
         if (event.candidate !== null) {
           const msg = JSON.stringify({
-            type: 'ice-candidate-for-peer',
+            type: 'ice-candidate-for-peer-relay',
             payload: event.candidate,
             walkerId: this._uuid
           })
-          this.signalingChannel.send(msg)
+          this._signalingChannel.send(msg)
         }
       }
       const msg = JSON.stringify({
@@ -92,7 +89,7 @@ class WalkerPeer {
         payload: this._firstPeerCon.localDescription,
         walkerId: this._uuid
       })
-      this.signalingChannel.send(msg)
+      this._signalingChannel.send(msg)
 
     } catch (err) {
       console.log(err)

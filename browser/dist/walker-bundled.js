@@ -7,7 +7,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] }, {
+      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302']
+    }, {
       urls: 'turn:numb.viagenie.ca',
       credential: 'muazkh',
       username: 'webrtc@live.com'
@@ -20,7 +21,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://178.62.51.86:9000/socketserver',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'
@@ -51,6 +52,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 
 const Log = console.log;
 console.log = msg => {
+  Log(msg);
   const data = Date.now() + ' - ' + msg;
   Log(data);
   document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
@@ -80,15 +82,6 @@ class WalkerPeer {
   }
 
   onSocketOpen() {
-    this.init();
-  }
-
-  onSocketMessage(rawMessage) {
-    const message = JSON.parse(rawMessage.data);
-    this.handleMessage(message, this._currentCon, this._signalingChannel);
-  }
-
-  init() {
     this._firstPeerCon = new window.RTCPeerConnection(_config2.default.iceConfig);
     this._firstPeerCannel;
     this._lastPeerCon = new window.RTCPeerConnection(_config2.default.iceConfig);
@@ -98,6 +91,11 @@ class WalkerPeer {
     this.joinNetwork();
   }
 
+  onSocketMessage(rawMessage) {
+    const message = JSON.parse(rawMessage.data);
+    this.handleMessage(message, this._currentCon, this._signalingChannel);
+  }
+
   // Connect to to the first peer through the signaling server
   joinNetwork() {
     var _this = this;
@@ -105,7 +103,7 @@ class WalkerPeer {
     return _asyncToGenerator(function* () {
       try {
         // Create data channel
-        const dataChannel = _this._firstPeerCon.createDataChannel();
+        const dataChannel = _this._firstPeerCon.createDataChannel('data-channel');
         dataChannel.onmessage = function (message) {
           _this.handleMessage(message.data, dataChannel);
         };
@@ -121,11 +119,11 @@ class WalkerPeer {
         _this._firstPeerCon.onicecandidate = function (event) {
           if (event.candidate !== null) {
             const msg = JSON.stringify({
-              type: 'ice-candidate-for-peer',
+              type: 'ice-candidate-for-peer-relay',
               payload: event.candidate,
               walkerId: _this._uuid
             });
-            _this.signalingChannel.send(msg);
+            _this._signalingChannel.send(msg);
           }
         };
         const msg = JSON.stringify({
@@ -133,7 +131,7 @@ class WalkerPeer {
           payload: _this._firstPeerCon.localDescription,
           walkerId: _this._uuid
         });
-        _this.signalingChannel.send(msg);
+        _this._signalingChannel.send(msg);
       } catch (err) {
         console.log(err);
       }

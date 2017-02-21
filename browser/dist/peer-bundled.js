@@ -7,7 +7,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] }, {
+      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302']
+    }, {
       urls: 'turn:numb.viagenie.ca',
       credential: 'muazkh',
       username: 'webrtc@live.com'
@@ -20,7 +21,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://178.62.51.86:9000/socketserver',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'
@@ -336,16 +337,15 @@ class Peer {
   }
 
   getIdStringsFromOffer(offer) {
-    var startIndex = 0,
-        index,
-        strings = [];
+    var startIndex = 0;
+    var index;
+    var strings = [];
     while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
       var localIndex = index;
       for (var i = 0; i < 5; i++) {
         localIndex = offer.indexOf(' ', localIndex + 1);
       }
       var substring = offer.substring(index, localIndex);
-      console.log('Found string: ' + substring);
       strings.push(substring);
       startIndex = index + 'candidate:'.length;
     }
