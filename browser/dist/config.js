@@ -19,7 +19,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://178.62.51.86:9000/socketserver', //'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://localhost:9000/socketserver',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'

@@ -43,19 +43,25 @@ function onMessage(message) {
     case 'answer-for-joining':
       answerForJoining(msg);
       break;
-    case 'walker-request':
-      walkerRequest(msg, this);
+    case 'walker-joining-offer':
+      walkerJoiningOffer(msg, this);
       break;
-    case 'offer-for-walker':
-      offerForWalker(msg);
+    case 'answer-for-walker' || 'walker-joining-answer':
+      answerForWalker(msg);
       break;
+    // case 'walker-request':
+    //   walkerRequest(msg, this)
+    //   break
+    // case 'offer-for-walker':
+    //   offerForWalker(msg)
+    //   break
     case 'answer-from-walker-relay':
       answerFromWalkerRelay(msg);
       break;
     case 'ice-candidate-for-walker':
       iceCandidateForWalker(msg);
       break;
-    case 'ice-candidate-for-peer-relay':
+    case 'ice-candidate-for-peer-relay' || 'walker-joining-ice-candidate':
       iceCandidateForPeer(msg);
       break;
     default:
@@ -79,6 +85,15 @@ const joining = (msg, socket) => {
   }
   lastPeer.send(JSON.stringify(msg));
   lastPeer = socket;
+};
+
+const walkerJoiningOffer = (msg, socket) => {
+  walker = socket;
+  firstPeer.send(JSON.stringify(msg));
+};
+
+const answerForWalker = msg => {
+  walker.send(JSON.stringify(msg));
 };
 
 const answerForJoining = msg => {
@@ -112,7 +127,7 @@ const answerFromWalkerRelay = msg => {
 };
 
 const iceCandidateForWalker = msg => {
-  walker.send(JSON.stringify(msg.payload));
+  walker.send(JSON.stringify(msg));
 };
 
 const iceCandidateForPeer = msg => {

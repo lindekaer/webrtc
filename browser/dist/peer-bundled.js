@@ -20,7 +20,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://178.62.51.86:9000/socketserver', //'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://localhost:9000/socketserver',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'
@@ -81,6 +81,7 @@ class Peer {
     this._connectionsAwaitingAnswer = {};
     this._walkerConnections = {};
     this.iceIdsForNextPeer = [];
+    this.isLastPeer = true;
     this.connectToServer();
   }
 
@@ -156,7 +157,7 @@ class Peer {
     })();
   }
 
-  createNewWalkerConnection(walkerId, requestingChannel) {
+  createNewWalkerConnection(walkerId, requestingChannel, offer, isJoining) {
     var _this2 = this;
 
     return _asyncToGenerator(function* () {
@@ -178,14 +179,14 @@ class Peer {
           delete _this2._connectionsAwaitingAnswer[[walkerId]];
         };
 
-        // Create the offer for a p2p connection
-        const offer = yield con.createOffer();
-        yield con.setLocalDescription(offer);
+        yield con.setRemoteDescription(offer);
+        const answer = yield con.createAnswer();
         const jsonOffer = JSON.stringify({
           walkerId,
-          type: 'offer-for-walker',
+          type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
           payload: con.localDescription,
-          uuid: _this2._uuid
+          uuid: _this2._uuid,
+          walkerId
         });
         _this2._connectionsAwaitingAnswer[[walkerId]] = {
           connection: con,
@@ -200,7 +201,7 @@ class Peer {
             if (event.candidate) {
               const jsonOffer = JSON.stringify({
                 walkerId,
-                type: 'ice-candidate-for-walker',
+                type: isJoining ? 'walker-joining-ice-candidate' : 'ice-candidate-for-walker',
                 payload: event.candidate,
                 uuid: _this2._uuid
               });
@@ -236,9 +237,7 @@ class Peer {
     var _this4 = this;
 
     return _asyncToGenerator(function* () {
-      console.log('connectionState: ' + _this4._entryCon.connectionState);
       const offer = new window.RTCSessionDescription(message.payload);
-      console.log(JSON.stringify(message.payload.sdp));
       _this4.iceIdsForNextPeer = _this4.getIdStringsFromOffer(JSON.stringify(message.payload.sdp));
       yield _this4._extensionCon.setRemoteDescription(offer);
       _this4._extensionCon.onicecandidate = function (event) {
@@ -253,6 +252,7 @@ class Peer {
       };
       _this4._extensionCon.ondatachannel = function (evt) {
         console.log('Connected to next peer');
+        _this4.isLastPeer = false;
         const channel = evt.channel;
         _this4._extensionChannel = channel;
         channel.onmessage = function (message) {
@@ -266,45 +266,59 @@ class Peer {
   }
 
   handleMessage(channelMessage, channel) {
-    const channelMessageData = channelMessage.data;
     var message = JSON.parse(channelMessage);
     switch (message.type) {
-      case 'answer-from-walker-relay':
-        this._extensionChannel.send(JSON.stringify({
-          type: 'answer-from-walker-destination',
-          data: message.payload,
-          walkerId: message.walkerId
-        }));
+      case 'walker-joining-offer':
+        this.createNewWalkerConnection(message.walkerId, channel, message.payload, true);
         break;
-      case 'answer-from-walker-destination':
-        var answer = new window.RTCSessionDescription(message.data);
-        this.connectToWalker(answer, message.walkerId);
+      // case 'answer-from-walker-relay':
+      //   this._extensionChannel.send(JSON.stringify({
+      //     type: 'answer-from-walker-destination',
+      //     data: message.payload,
+      //     walkerId: message.walkerId
+      //   }))
+      //   break
+      // case 'answer-from-walker-destination':
+      //   var answer = new window.RTCSessionDescription(message.data)
+      //   this.connectToWalker(answer, message.walkerId)
+      //   break
+      case 'offer-for-last-peer':
+        if (this.isLastPeer) {
+          this.createNewWalkerConnection(message.walkerId, channel, message.payload);
+        } else {
+          this._extensionChannel.send(JSON.stringify(message));
+        }
         break;
-      case 'get-offer-from-next-peer':
-
-        this._extensionChannel.send(JSON.stringify({
-          type: 'request-offer-for-walker',
-          walkerId: message.walkerId
-        }));
-        break;
-      case 'request-offer-for-walker':
-        this.createNewWalkerConnection(message.walkerId, channel);
-        break;
-      case 'offer-for-walker':
-        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify({
-          payload: message.payload,
-          iceIds: this.iceIdsForNextPeer
-        }));
+      // case 'request-offer-for-walker':
+      //   this.createNewWalkerConnection(message.walkerId, channel)
+      //   break
+      case 'offer-from-walker':
+        var walker = this._walkerConnections[[message.walkerId]];
+        if (walker) {
+          walker.channel.send(JSON.stringify(message));
+        } else {
+          this._entryChannel.send(JSON.stringify(message));
+        }
+        // this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify({
+        //   payload: message.payload,
+        //   iceIds: this.iceIdsForNextPeer
+        // }))
         break;
       case 'ice-candidate-for-walker':
-        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
+        var walker = this._walkerConnections[[message.walkerId]];
+        if (walker) {
+          walker.channel.send(JSON.stringify(message));
+        } else {
+          this._entryChannel.send(JSON.stringify(message));
+        }
+        // this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message))
         break;
-      case 'ice-candidate-for-peer-relay':
-        this._extensionChannel.send(JSON.stringify({
-          type: 'ice-candidate-for-peer',
-          payload: message.payload,
-          walkerId: message.uuid
-        }));
+      case 'ice-candidate-for-last-peer':
+        if (this.isLastPeer) {
+          this.addIceCandidateForWalkerConnection(candidate, message.walkerId);
+        } else {
+          this._extensionChannel.send(JSON.stringify(message));
+        }
         break;
       case 'ice-candidate-for-peer':
         var candidate = new window.RTCIceCandidate(message.payload);
