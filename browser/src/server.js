@@ -135,7 +135,7 @@ const iceCandidateForPeer = (msg) => {
   firstPeer.send(JSON.stringify({
     type: 'ice-candidate-for-peer',
     payload: msg.payload,
-    walkerId: msg.uuid
+    walkerId: msg.walkerId
   }))
 }
 

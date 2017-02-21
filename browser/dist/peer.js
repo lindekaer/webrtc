@@ -135,9 +135,17 @@ class Peer {
 
     return _asyncToGenerator(function* () {
       console.log('Start creating new PeerConnection for walker');
-      const con = new window.RTCPeerConnection(_config2.default.iceConfig);
+      console.log(walkerId);
       try {
+        const con = new window.RTCPeerConnection(_config2.default.iceConfig);
+        console.log(con);
+        yield con.setRemoteDescription(offer);
         const dataChannel = con.createDataChannel('data-channel');
+        _this2._connectionsAwaitingAnswer[walkerId] = {
+          connection: con,
+          channel: dataChannel
+        };
+        console.log(JSON.stringify(_this2._connectionsAwaitingAnswer));
         // Setup handlers for the locally created channel
         dataChannel.onmessage = function (message) {
           _this2.handleMessage(message.data, dataChannel);
@@ -151,34 +159,26 @@ class Peer {
           };
           delete _this2._connectionsAwaitingAnswer[[walkerId]];
         };
-
-        yield con.setRemoteDescription(offer);
-        const answer = yield con.createAnswer();
-        const jsonOffer = JSON.stringify({
+        yield con.createAnswer();
+        const jsonAnswer = JSON.stringify({
           walkerId,
           type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
           payload: con.localDescription,
-          uuid: _this2._uuid,
-          walkerId
+          uuid: _this2._uuid
         });
-        _this2._connectionsAwaitingAnswer[[walkerId]] = {
-          connection: con,
-          offer: jsonOffer,
-          channel: dataChannel
-        };
-        requestingChannel.send(jsonOffer);
+        requestingChannel.send(jsonAnswer);
         con.onicecandidate = function (event) {
           if (event.candidate == null) {
             // TODO: send end of candidate event
           } else {
             if (event.candidate) {
-              const jsonOffer = JSON.stringify({
+              const jsonICE = JSON.stringify({
                 walkerId,
                 type: isJoining ? 'walker-joining-ice-candidate' : 'ice-candidate-for-walker',
                 payload: event.candidate,
                 uuid: _this2._uuid
               });
-              requestingChannel.send(jsonOffer);
+              requestingChannel.send(jsonICE);
             }
           }
         };
@@ -190,7 +190,11 @@ class Peer {
 
   addIceCandidateForWalkerConnection(candidate, walkerId) {
     console.log('Candidate: ' + JSON.stringify(candidate));
-    this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate);
+    console.log(walkerId);
+    console.log('-->');
+    console.log(JSON.stringify(this));
+    console.log('-->');
+    this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate);
   }
 
   connectToWalker(answer, walkerId) {
@@ -288,6 +292,7 @@ class Peer {
         break;
       case 'ice-candidate-for-last-peer':
         if (this.isLastPeer) {
+          var candidate = new window.RTCIceCandidate(message.payload);
           this.addIceCandidateForWalkerConnection(candidate, message.walkerId);
         } else {
           this._extensionChannel.send(JSON.stringify(message));

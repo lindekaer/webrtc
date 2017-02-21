@@ -117,9 +117,17 @@ class Peer {
 
   async createNewWalkerConnection (walkerId, requestingChannel, offer, isJoining) {
     console.log('Start creating new PeerConnection for walker')
-    const con = new window.RTCPeerConnection(config.iceConfig)
+    console.log(walkerId)
     try {
+      const con = new window.RTCPeerConnection(config.iceConfig)
+      console.log(con)
+      await con.setRemoteDescription(offer)
       const dataChannel = con.createDataChannel('data-channel')
+      this._connectionsAwaitingAnswer[walkerId] = {
+        connection: con,
+        channel: dataChannel
+      }
+      console.log(JSON.stringify(this._connectionsAwaitingAnswer))
       // Setup handlers for the locally created channel
       dataChannel.onmessage = (message) => {
         this.handleMessage(message.data, dataChannel)
@@ -133,34 +141,26 @@ class Peer {
         }
         delete this._connectionsAwaitingAnswer[[walkerId]]
       }
-
-      await con.setRemoteDescription(offer)
-      const answer = await con.createAnswer()
-      const jsonOffer = JSON.stringify({
+      await con.createAnswer()
+      const jsonAnswer = JSON.stringify({
         walkerId,
         type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
         payload: con.localDescription,
-        uuid: this._uuid,
-        walkerId
+        uuid: this._uuid
       })
-      this._connectionsAwaitingAnswer[[walkerId]] = {
-        connection: con,
-        offer: jsonOffer,
-        channel: dataChannel
-      }
-      requestingChannel.send(jsonOffer)
+      requestingChannel.send(jsonAnswer)
       con.onicecandidate = (event) => {
         if (event.candidate == null) {
           // TODO: send end of candidate event
         } else {
           if (event.candidate) {
-            const jsonOffer = JSON.stringify({
+            const jsonICE = JSON.stringify({
               walkerId,
               type: isJoining ? 'walker-joining-ice-candidate' : 'ice-candidate-for-walker',
               payload: event.candidate,
               uuid: this._uuid
             })
-            requestingChannel.send(jsonOffer)
+            requestingChannel.send(jsonICE)
           }
         }
       }
@@ -171,7 +171,11 @@ class Peer {
 
   addIceCandidateForWalkerConnection (candidate, walkerId) {
     console.log('Candidate: ' + JSON.stringify(candidate))
-    this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate)
+    console.log(walkerId)
+    console.log('-->')
+    console.log(JSON.stringify(this))
+    console.log('-->')
+    this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate)
   }
 
   connectToWalker (answer, walkerId) {
@@ -179,11 +183,11 @@ class Peer {
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer)
   }
 
-  async handleAnswerFromLastPeer(answer) {
+  async handleAnswerFromLastPeer (answer) {
     this._entryCon.setRemoteDescription(new window.RTCSessionDescription(answer))
   }
 
-  async sendAnswerToJoiningPeer(message) {
+  async sendAnswerToJoiningPeer (message) {
     const offer = new window.RTCSessionDescription(message.payload)
     this.iceIdsForNextPeer = this.getIdStringsFromOffer(JSON.stringify(message.payload.sdp))
     await this._extensionCon.setRemoteDescription(offer)
@@ -261,6 +265,7 @@ class Peer {
         break
       case 'ice-candidate-for-last-peer':
         if (this.isLastPeer) {
+          var candidate = new window.RTCIceCandidate(message.payload)
           this.addIceCandidateForWalkerConnection(candidate, message.walkerId)
         } else {
           this._extensionChannel.send(JSON.stringify(message))
