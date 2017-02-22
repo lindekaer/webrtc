@@ -57,6 +57,6 @@ for num in {1..5}
   sleep 20
 done
 
-for num in 1 2 4 8 16 32
+for num in 1 2 4 8 16 32 64 128 256
   do node ./data/calc.js --input-file ./data/test_${env}_${num}.data
 done
