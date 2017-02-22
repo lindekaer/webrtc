@@ -117,7 +117,6 @@ class Peer {
 
   async createNewWalkerConnection (walkerId, requestingChannel, offer, isJoining) {
     console.log('Start creating new PeerConnection for walker')
-    console.log(walkerId)
     try {
       const con = new window.RTCPeerConnection(config.iceConfig)
       console.log(con)
@@ -127,7 +126,6 @@ class Peer {
         connection: con,
         channel: dataChannel
       }
-      console.log(JSON.stringify(this._connectionsAwaitingAnswer))
       // Setup handlers for the locally created channel
       dataChannel.onmessage = (message) => {
         this.handleMessage(message.data, dataChannel)
@@ -141,7 +139,8 @@ class Peer {
         }
         delete this._connectionsAwaitingAnswer[[walkerId]]
       }
-      await con.createAnswer()
+      var answer = await con.createAnswer()
+      await con.setLocalDescription(answer)
       const jsonAnswer = JSON.stringify({
         walkerId,
         type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
@@ -170,11 +169,6 @@ class Peer {
   }
 
   addIceCandidateForWalkerConnection (candidate, walkerId) {
-    console.log('Candidate: ' + JSON.stringify(candidate))
-    console.log(walkerId)
-    console.log('-->')
-    console.log(JSON.stringify(this))
-    console.log('-->')
     this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate)
   }
 
@@ -216,6 +210,7 @@ class Peer {
   }
 
   handleMessage (channelMessage, channel) {
+    console.log('Message: ' + channelMessage)
     var message = JSON.parse(channelMessage)
     switch (message.type) {
       case 'walker-joining-offer':

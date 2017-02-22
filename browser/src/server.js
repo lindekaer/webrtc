@@ -79,10 +79,10 @@ function onClose () {
 const joining = (msg, socket) => {
   peers[msg.joinerId] = socket
   if (!lastPeer) {
-      firstPeer = socket
-      lastPeer = socket
-      iceIdsForNextPeer = getIdStringsFromOffer(JSON.stringify(msg.payload.sdp))
-      return
+    firstPeer = socket
+    lastPeer = socket
+    iceIdsForNextPeer = getIdStringsFromOffer(JSON.stringify(msg.payload.sdp))
+    return
   }
   lastPeer.send(JSON.stringify(msg))
   lastPeer = socket
@@ -139,16 +139,18 @@ const iceCandidateForPeer = (msg) => {
   }))
 }
 
-  const getIdStringsFromOffer = (offer) => {
-    var startIndex = 0, index, strings = [];
-    while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
-      var localIndex = index
-      for (var i = 0; i < 5; i++) {
-        localIndex = offer.indexOf(' ', localIndex+1)
-      }
-      var substring = offer.substring(index, localIndex)
-      strings.push(substring);
-      startIndex = index + 'candidate:'.length;
+const getIdStringsFromOffer = (offer) => {
+  var startIndex = 0
+  var index
+  var strings = []
+  while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
+    var localIndex = index
+    for (var i = 0; i < 5; i++) {
+      localIndex = offer.indexOf(' ', localIndex + 1)
     }
-    return strings
+    var substring = offer.substring(index, localIndex)
+    strings.push(substring)
+    startIndex = index + 'candidate:'.length
   }
+  return strings
+}

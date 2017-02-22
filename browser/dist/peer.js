@@ -135,7 +135,6 @@ class Peer {
 
     return _asyncToGenerator(function* () {
       console.log('Start creating new PeerConnection for walker');
-      console.log(walkerId);
       try {
         const con = new window.RTCPeerConnection(_config2.default.iceConfig);
         console.log(con);
@@ -145,7 +144,6 @@ class Peer {
           connection: con,
           channel: dataChannel
         };
-        console.log(JSON.stringify(_this2._connectionsAwaitingAnswer));
         // Setup handlers for the locally created channel
         dataChannel.onmessage = function (message) {
           _this2.handleMessage(message.data, dataChannel);
@@ -159,7 +157,8 @@ class Peer {
           };
           delete _this2._connectionsAwaitingAnswer[[walkerId]];
         };
-        yield con.createAnswer();
+        var answer = yield con.createAnswer();
+        yield con.setLocalDescription(answer);
         const jsonAnswer = JSON.stringify({
           walkerId,
           type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
@@ -189,11 +188,6 @@ class Peer {
   }
 
   addIceCandidateForWalkerConnection(candidate, walkerId) {
-    console.log('Candidate: ' + JSON.stringify(candidate));
-    console.log(walkerId);
-    console.log('-->');
-    console.log(JSON.stringify(this));
-    console.log('-->');
     this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate);
   }
 
@@ -243,6 +237,7 @@ class Peer {
   }
 
   handleMessage(channelMessage, channel) {
+    console.log('Message: ' + channelMessage);
     var message = JSON.parse(channelMessage);
     switch (message.type) {
       case 'walker-joining-offer':

@@ -254,17 +254,12 @@ class WalkerPeer {
         const offer = yield con.createOffer();
         yield con.setLocalDescription(offer);
         const jsonOffer = JSON.stringify({
-          walkerId,
+          walkerId: _this2._uuid,
           type: 'offer-for-last-peer',
           payload: con.localDescription,
-          uuid: _this2._uuid,
-          walkerId
+          uuid: _this2._uuid
         });
-        _this2._connectionsAwaitingAnswer[[walkerId]] = {
-          connection: con,
-          offer: jsonOffer,
-          channel: dataChannel
-        };
+
         console.log('Initiating request to connect with last peer');
         _this2._lastPeerChannel.send(jsonOffer);
         con.onicecandidate = function (event) {
@@ -273,7 +268,7 @@ class WalkerPeer {
           } else {
             if (event.candidate) {
               const jsonOffer = JSON.stringify({
-                walkerId,
+                walkerId: _this2._uuid,
                 type: 'ice-candidate-for-last-peer',
                 payload: event.candidate,
                 uuid: _this2._uuid
