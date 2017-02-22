@@ -2,6 +2,7 @@ echo "Starting test"
 
 env=$1
 signaling_server=$2
+time=$(date +%s)
 
 number="1"
 for num in {1..5}
@@ -58,5 +59,5 @@ for num in {1..5}
 done
 
 for num in 1 2 4 8 16 32 64 128 256
-  do node ./data/calc.js --input-file ./data/test_${env}_${num}.data
+  do node ./data/calc.js --input-file ./data/${time}_test_${env}_${num}.data
 done
