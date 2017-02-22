@@ -11,9 +11,11 @@
 import uuid from 'uuid'
 import config from './config'
 
-const Log = (msg) => {
+const Log = console.log
+console.log = (msg) => {
   const data = Date.now() + ' - ' + msg
-  console.log(data)
+  Log(data)
+  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data
 }
 
 /*
@@ -40,12 +42,13 @@ class WalkerPeer {
     this.init()
   }
 
-  onSocketMessage (message) {
-    this.consume(message.data)
+  onSocketMessage (rawMessage) {
+    const message = JSON.parse(rawMessage.data)
+    this.handleMessage(message, this._currentCon, this._socket)
   }
 
   init () {
-    this._currentCon = new RTCPeerConnection(config.iceConfig)
+    this._currentCon = new window.RTCPeerConnection(config.iceConfig)
     this._nextCon
     this._nodeCount = 0
     const msg = JSON.stringify({
@@ -55,61 +58,55 @@ class WalkerPeer {
     this._socket.send(msg)
   }
 
-  async consume (rawMessage) {
-    try {
-      const message = JSON.parse(rawMessage)
-      const offer = new RTCSessionDescription(message)
-      this.handleDataChannels(this._currentCon)
-      await this._currentCon.setRemoteDescription(offer)
-      const answer = await this._currentCon.createAnswer()
-      this._currentCon.setLocalDescription(answer)
-      this._currentCon.onicecandidate = (candidate) => {
-        console.log(candidate.candidate)
-        if (candidate.candidate == null) {
-          this._socket.send(JSON.stringify({
-            type: 'walker-request-answer',
-            payload: this._currentCon.localDescription,
+  handleMessage (message, peerConnection, channel) {
+    if (message.sdp) {
+      const offer = new window.RTCSessionDescription(message)
+      this.handleDataChannels(peerConnection)
+      peerConnection.setRemoteDescription(offer, () => {
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate == null) {
+            // TODO: Send end of candidates event
+          } else {
+            if (event.candidate) {
+              const jsonOffer = JSON.stringify({
+                type: 'ice-candidate-for-peer-relay',
+                payload: event.candidate,
+                uuid: this._uuid
+              })
+              channel.send(jsonOffer)
+            }
+          }
+        } 
+        peerConnection.createAnswer((answer) => {
+          peerConnection.setLocalDescription(answer)
+          channel.send(JSON.stringify({
+            type: 'answer-from-walker-relay',
+            payload: peerConnection.localDescription,
             walkerId: this._uuid
           }))
-        }
-      }
-    } catch (err) {
-      console.log(err)
+        }, errorHandler)
+      }, errorHandler)
+    } else {
+      console.log(JSON.stringify(message))
+      peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
     }
   }
 
+// 'walker-request-answer'
   handleDataChannels (peerConnection) {
     peerConnection.ondatachannel = (event) => {
       const channel = event.channel
-      channel.onmessage = (msg) => {
-        // console.log('Recieved offer from node ' + this._nodeCount)
-        const data = JSON.parse(msg.data)
-        const offer = new RTCSessionDescription(data)
-        this._currentCon = this._nextCon
-        this._nextCon = new RTCPeerConnection(config.iceConfig)
-        this.handleDataChannels(this._nextCon)
 
-        this._nextCon.setRemoteDescription(offer, () => {
-          this._nextCon.createAnswer((answer) => {
-            this._nextCon.setLocalDescription(answer)
-          }, errorHandler)
-        }, errorHandler)
-        this._nextCon.onicecandidate = (candidate) => {
-          // console.log('Got candidate event')
-          if (candidate.candidate == null) {
-            // console.log('Sending answer to node ' + this._nodeCount)
-            channel.send(JSON.stringify({
-              type: 'walker-to-middle',
-              payload: this._nextCon.localDescription,
-              walkerId: this._uuid
-            }))
-          }
-        }
+      channel.onmessage = (msg) => {
+        const message = JSON.parse(msg.data)
+        this.handleMessage(message, this._nextCon, channel)
       }
 
       channel.onopen = (evt) => {
+        this._currentCon = this._nextCon
+        this._nextCon = new window.RTCPeerConnection(config.iceConfig)
         this._nodeCount++
-        Log('Connection established to node ' + this._nodeCount)
+        console.log('Connection established to node ' + this._nodeCount)
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid

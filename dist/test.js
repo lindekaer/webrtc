@@ -31,7 +31,7 @@ const dc = pc1.createDataChannel();
 // Add event handlers on data channel
 dc.onopen = () => console.log('Peer 1: Data channel is open!');
 dc.onmessage = event => {
-  console.log(`Peer 1: Got message: "${ event.data }"`);
+  console.log(`Peer 1: Got message: "${event.data}"`);
   process.exit();
 };
 

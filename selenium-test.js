@@ -93,7 +93,7 @@ function doneSignalFired () {
               }
             })
           })
-      }, 1000)
+      }, 500)
     })
   })().then(() => true)
 }

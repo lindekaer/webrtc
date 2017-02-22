@@ -57,8 +57,8 @@ const NUM_PEERS = args['num-peers'] || 20;
 const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketserver';
 const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
-const DOCKER_IMAGE_ID = `webrtc/${ _uuid2.default.v1() }`;
-const DATA_SHEET_PATH = _path2.default.join(__dirname, '..', 'data', args['output-file'] || `${ Date.now() }_test_result.data`);
+const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
+const DATA_SHEET_PATH = _path2.default.join(__dirname, '..', 'data', args['output-file'] || `${Date.now()}_test_result.data`);
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -108,7 +108,7 @@ function createBootPeer(cb) {
 function runContainer(currentNum, type, cb) {
   // Terminate if sufficient containers have been spawned
   if (currentNum === NUM_CONTAINERS) return cb();
-  console.log(`Launching container ${ currentNum + 1 }...`);
+  console.log(`Launching container ${currentNum + 1}...`);
 
   // Generate UUID for Docker container instance
   const UUID = _uuid2.default.v1();
@@ -157,14 +157,14 @@ function startWalker(cb) {
 
           durations.push(duration);
 
-          _fs2.default.appendFile(DATA_SHEET_PATH, `${ duration }\n`, err => {});
+          _fs2.default.appendFile(DATA_SHEET_PATH, `${duration}\n`, err => {});
 
           timeTotal += duration;
 
           numConnections++;
 
-          console.log(`Connection number: ${ numConnections }`);
-          console.log(`Duration: ${ duration }`);
+          console.log(`Connection number: ${numConnections}`);
+          console.log(`Duration: ${duration}`);
         }
 
         prevTime = timestamp;
@@ -177,12 +177,12 @@ function startWalker(cb) {
           console.log('');
           console.log('-------- ⚡️  Test completed ⚡️ --------');
           console.log('');
-          console.log(`Number of connection handovers: ${ _colors2.default.yellow.bold(numConnections) }`);
-          console.log(`Min (fastest handover):         ${ _colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms') }`);
-          console.log(`Max (slowest handover):         ${ _colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms') }`);
-          console.log(`Mean:                           ${ _colors2.default.green.bold.underline(`${ mean.toFixed(2) }`) }`);
-          console.log(`Variance:                       ${ _colors2.default.green.bold.underline(`${ variance.toFixed(2) }`) }`);
-          console.log(`Standard deviation:             ${ _colors2.default.green.bold.underline(`${ standardDeviation.toFixed(2) }`) }`);
+          console.log(`Number of connection handovers: ${_colors2.default.yellow.bold(numConnections)}`);
+          console.log(`Min (fastest handover):         ${_colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms')}`);
+          console.log(`Max (slowest handover):         ${_colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms')}`);
+          console.log(`Mean:                           ${_colors2.default.green.bold.underline(`${mean.toFixed(2)}`)}`);
+          console.log(`Variance:                       ${_colors2.default.green.bold.underline(`${variance.toFixed(2)}`)}`);
+          console.log(`Standard deviation:             ${_colors2.default.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`);
           console.log('');
 
           child.kill();
@@ -194,7 +194,7 @@ function startWalker(cb) {
 }
 
 function clean() {
-  (0, _child_process.exec)(`${ _path2.default.join(__dirname, '..', 'clean.sh') } ${ DOCKER_IMAGE_ID }`, (err, stdout, stderr) => {
+  (0, _child_process.exec)(`${_path2.default.join(__dirname, '..', 'clean.sh')} ${DOCKER_IMAGE_ID}`, (err, stdout, stderr) => {
     console.log('Cleanup completed');
   });
 }

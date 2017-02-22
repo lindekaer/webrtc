@@ -20,14 +20,14 @@ var wss = new WebSocketServer({ port: 8080 });
 */
 
 var peers = {};
-var offers = [];
+var lastPeer;
 var firstPeer;
-var walker;
 var connectedCount = 0;
+var walker;
 
 wss.on('connection', ws => {
   connectedCount++;
-  console.log(`Opened! ${ connectedCount } connected.`);
+  console.log(`Opened! ${connectedCount} connected.`);
 
   ws.on('message', onMessage);
   ws.on('close', onClose);
@@ -35,61 +35,91 @@ wss.on('connection', ws => {
 
 function onMessage(message) {
   const msg = JSON.parse(message);
-  if (msg.type === 'joining') {
-    peers[msg.uuid] = this;
-
-    // Ensure to set the first peer
-    if (!firstPeer) {
-      firstPeer = this;
-      offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' });
-      return;
-    }
-
-    while (!sendOfferToPeer(this, msg)) {
-      console.log('Retrying...');
-    }
-  }
-
-  if (msg.type === 'answer') {
-    peers[msg.uuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }));
-  }
-
-  if (msg.type === 'walker-request') {
-    // Save reference to walker socket
-    console.log('walker request');
-    walker = this;
-    // Notify first peer about walker
-    var mess = JSON.stringify({
-      type: 'request-offer-for-walker',
-      walkerId: msg.uuid
-    });
-    firstPeer.send(mess);
-  }
-
-  if (msg.type === 'offer-for-walker') {
-    walker.send(JSON.stringify(msg.payload));
-  }
-
-  if (msg.type === 'walker-request-answer') {
-    firstPeer.send(JSON.stringify(msg));
+  switch (msg.type) {
+    case 'joining':
+      joining(msg, this);
+      break;
+    case 'answer-for-joining':
+      answerForJoining(msg);
+      break;
+    case 'walker-request':
+      walkerRequest(msg, this);
+      break;
+    case 'offer-for-walker':
+      offerForWalker(msg);
+      break;
+    case 'answer-from-walker-relay':
+      answerFromWalkerRelay(msg);
+      break;
+    case 'ice-candidate-for-walker':
+      iceCandidateForWalker(msg);
+      break;
+    case 'ice-candidate-for-peer-relay':
+      iceCandidateForPeer(msg);
+      break;
+    default:
+      console.log('No message type');
+      console.log(message);
   }
 }
 
 function onClose() {
   connectedCount--;
-  console.log(`Closed! ${ connectedCount } connected.`);
+  console.log(`Closed! ${connectedCount} connected.`);
   if (connectedCount === 0) {
     firstPeer = undefined;
+    lastPeer = undefined;
     walker = undefined;
     peers = {};
-    offers = [];
   }
 }
 
-function sendOfferToPeer(peer, message) {
-  var offer = offers.shift();
-  if (!offer) return false;
-  peer.send(JSON.stringify(offer));
-  offers.push({ payload: message.payload, uuid: message.uuid, type: 'offer' });
-  return true;
-}
+const joining = (msg, socket) => {
+  peers[msg.joinerId] = socket;
+  if (!lastPeer) {
+    firstPeer = socket;
+    lastPeer = socket;
+    return;
+  }
+  lastPeer.send(JSON.stringify(msg));
+  lastPeer = socket;
+};
+
+const answerForJoining = msg => {
+  peers[msg.joinerId].send(JSON.stringify(msg));
+};
+
+const walkerRequest = (msg, socket) => {
+  // Save reference to walker socket
+  walker = socket;
+  // Notify first peer about walker
+  var message = JSON.stringify({
+    type: 'request-offer-for-walker',
+    walkerId: msg.uuid
+  });
+  firstPeer.send(message);
+};
+
+const offerForWalker = msg => {
+  walker.send(JSON.stringify(msg.payload));
+};
+
+const answerFromWalkerRelay = msg => {
+  firstPeer.send(JSON.stringify({
+    type: 'answer-from-walker-destination',
+    data: msg.payload,
+    walkerId: msg.walkerId
+  }));
+};
+
+const iceCandidateForWalker = msg => {
+  walker.send(JSON.stringify(msg.payload));
+};
+
+const iceCandidateForPeer = msg => {
+  firstPeer.send(JSON.stringify({
+    type: 'ice-candidate-for-peer',
+    payload: msg.payload,
+    walkerId: msg.uuid
+  }));
+};

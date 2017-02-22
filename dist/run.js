@@ -47,7 +47,7 @@ _async2.default.series([cb => {
   cleanup(cb);
 }], (err, data) => {
   if (err) console.log(err);
-  console.log(`${ NUM_PEER } has been spawned.`);
+  console.log(`${NUM_PEER} has been spawned.`);
 });
 
 /*
