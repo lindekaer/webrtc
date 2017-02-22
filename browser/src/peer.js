@@ -59,6 +59,7 @@ class Peer {
   }
 
   onSocketMessage (message) {
+    console.log('Socket message')
     this.handleMessage(message.data, this.signalingChannel)
   }
 
@@ -119,40 +120,37 @@ class Peer {
     console.log('Start creating new PeerConnection for walker')
     try {
       const con = new window.RTCPeerConnection(config.iceConfig)
-      console.log(con)
-      await con.setRemoteDescription(offer)
-      const dataChannel = con.createDataChannel('data-channel')
       this._connectionsAwaitingAnswer[walkerId] = {
-        connection: con,
-        channel: dataChannel
+        connection: con
       }
-      // Setup handlers for the locally created channel
-      dataChannel.onmessage = (message) => {
-        this.handleMessage(message.data, dataChannel)
+      console.log(con)
+      con.ondatachannel = (event) => {
+        console.log('Datachannel created')
+        var dataChannel = event.channel
+        this._connectionsAwaitingAnswer[walkerId]['channel'] = dataChannel
+        dataChannel.onmessage = (message) => {
+          console.log('handleMessage now')
+          this.handleMessage(message.data, dataChannel)
+        }
+
+        dataChannel.onopen = (evt) => {
+          console.log('Connection opened to walker with id ' + walkerId)
+          this._walkerConnections[[walkerId]] = {
+            connection: con,
+            channel: dataChannel
+          }
+          delete this._connectionsAwaitingAnswer[[walkerId]]
+        }
       }
 
-      dataChannel.onopen = (event) => {
-        console.log('Connection opened to walker with id ' + walkerId)
-        this._walkerConnections[[walkerId]] = {
-          connection: con,
-          channel: dataChannel
-        }
-        delete this._connectionsAwaitingAnswer[[walkerId]]
-      }
-      var answer = await con.createAnswer()
-      await con.setLocalDescription(answer)
-      const jsonAnswer = JSON.stringify({
-        walkerId,
-        type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
-        payload: con.localDescription,
-        uuid: this._uuid
-      })
-      requestingChannel.send(jsonAnswer)
+      await con.setRemoteDescription(offer)
+      // Setup handlers for the locally created channel
       con.onicecandidate = (event) => {
         if (event.candidate == null) {
           // TODO: send end of candidate event
         } else {
           if (event.candidate) {
+            
             const jsonICE = JSON.stringify({
               walkerId,
               type: isJoining ? 'walker-joining-ice-candidate' : 'ice-candidate-for-walker',
@@ -163,13 +161,35 @@ class Peer {
           }
         }
       }
+      var answer = await con.createAnswer()
+      await con.setLocalDescription(answer)
+      const jsonAnswer = JSON.stringify({
+        walkerId,
+        type: isJoining ? 'walker-joining-answer' : 'answer-for-walker',
+        payload: con.localDescription,
+        uuid: this._uuid
+      })
+      requestingChannel.send(jsonAnswer)
+
     } catch (err) {
       console.log(err)
     }
   }
 
   addIceCandidateForWalkerConnection (candidate, walkerId) {
-    this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate)
+    // console.log('Candidate: ' + JSON.stringify(candidate))
+    // console.log(walkerId)
+    // console.log('-->')
+    // console.log(JSON.stringify(this))
+    // console.log('-->')
+    // console.log(this._connectionsAwaitingAnswer[walkerId])
+    var con = this._connectionsAwaitingAnswer[walkerId]
+    if (con) {
+      con.connection.addIceCandidate(candidate)
+    } else {
+      console.log('NOOOO could not add ice candidate')
+    }
+    // this._connectionsAwaitingAnswer[walkerId].connection.addIceCandidate(candidate)
   }
 
   connectToWalker (answer, walkerId) {
@@ -210,7 +230,7 @@ class Peer {
   }
 
   handleMessage (channelMessage, channel) {
-    console.log('Message: ' + channelMessage)
+    console.log(channelMessage)
     var message = JSON.parse(channelMessage)
     switch (message.type) {
       case 'walker-joining-offer':
@@ -229,26 +249,33 @@ class Peer {
       //   break
       case 'offer-for-last-peer':
         if (this.isLastPeer) {
+          console.log('Last peer creating walker connection')
           this.createNewWalkerConnection(message.walkerId, channel, message.payload)
         } else {
+          console.log('Not last peer sending it on')
           this._extensionChannel.send(JSON.stringify(message))
         }
         break
-      // case 'request-offer-for-walker':
-      //   this.createNewWalkerConnection(message.walkerId, channel)
-      //   break
-      case 'offer-from-walker':
+      case 'answer-for-walker':
         var walker = this._walkerConnections[[message.walkerId]]
         if (walker) {
           walker.channel.send(JSON.stringify(message))
         } else {
           this._entryChannel.send(JSON.stringify(message))
         }
+        break
+      // case 'offer-from-walker':
+      //   var walker = this._walkerConnections[[message.walkerId]]
+      //   if (walker) {
+      //     walker.channel.send(JSON.stringify(message))
+      //   } else {
+      //     this._entryChannel.send(JSON.stringify(message))
+      //   }
         // this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify({
         //   payload: message.payload,
         //   iceIds: this.iceIdsForNextPeer
         // }))
-        break
+        // break
       case 'ice-candidate-for-walker':
         var walker = this._walkerConnections[[message.walkerId]]
         if (walker) {
@@ -260,13 +287,16 @@ class Peer {
         break
       case 'ice-candidate-for-last-peer':
         if (this.isLastPeer) {
+          console.log('Last peer adding candidate')
           var candidate = new window.RTCIceCandidate(message.payload)
           this.addIceCandidateForWalkerConnection(candidate, message.walkerId)
         } else {
+          console.log('Not last peer sending it on')
           this._extensionChannel.send(JSON.stringify(message))
         }
         break
       case 'ice-candidate-for-peer':
+      console.log('ice candidate for peer')
         var candidate = new window.RTCIceCandidate(message.payload)
         this.addIceCandidateForWalkerConnection(candidate, message.walkerId)
         break
