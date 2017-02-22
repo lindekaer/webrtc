@@ -39,6 +39,24 @@ for num in {1..5}
   sleep 20
 done
 
+number="64"
+for num in {1..5}
+  do node dist/runner.js --num-containers 2 --num-peers ${number} --mode full --signaling-url ${signaling_server} --output-file "test_${env}_${number}.data"
+  sleep 20
+done
+
+number="128"
+for num in {1..5}
+  do node dist/runner.js --num-containers 2 --num-peers ${number} --mode full --signaling-url ${signaling_server} --output-file "test_${env}_${number}.data"
+  sleep 20
+done
+
+number="256"
+for num in {1..5}
+  do node dist/runner.js --num-containers 2 --num-peers ${number} --mode full --signaling-url ${signaling_server} --output-file "test_${env}_${number}.data"
+  sleep 20
+done
+
 for num in 1 2 4 8 16 32
   do node ./data/calc.js --input-file ./data/test_${env}_${num}.data
 done
