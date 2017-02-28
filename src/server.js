@@ -53,11 +53,13 @@ function onMessage (message) {
       var morePotentialWaiting = true
       while (morePotentialWaiting) {
         var lastOffer = offers[0]
-        for (const waitingOffer of waiting) {
+        for (var i = 0; i < waiting.length; i++) {
+          const waitingOffer = waiting[i]
           if (waitingOffer.containerUuid !== lastOffer.containerUuid) {
             while (!sendOfferToPeer(this, msg)) {
               console.log('Retrying...')
             }
+            waiting.splice(i, 1)
             break
           }
         }
