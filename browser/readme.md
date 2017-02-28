@@ -18,9 +18,23 @@ https://developer.mozilla.org/en-US/docs/Web/API/RTCIceServer
 https://www.w3.org/TR/webrtc/ -> search for addIceCandidate
 https://www.w3.org/TR/webrtc/#dom-rtcicecandidate-sdpmlineindex -> search for 'This carries the candidate-attribute as defined in section 15.1 of [ICE].'
 https://tools.ietf.org/html/rfc5245#page-73 -> page 73
-http://stackoverflow.com/questions/26342589/how-does-webrtc-decide-which-turn-servers-to-use
 https://tools.ietf.org/html/rfc5245#section-4.1.2 -> page 22
 https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection#RTCPeerConnectionState_enum -> search for  'RTCPeerConnectionState enum'
+
+### Researching the component-id
+https://www.ietf.org/proceedings/interim-2012-rtcweb-02/slides/slides-interim-2012-rtcweb-2-1.pdf
+https://groups.google.com/forum/#!topic/discuss-webrtc/d8C23jkgCDI
+https://tools.ietf.org/html/draft-ietf-rtcweb-rtp-usage-26#section-9 -> page 23
+https://tools.ietf.org/html/rfc5968
+https://tools.ietf.org/id/draft-nandakumar-rtcweb-sdp-01.html#rfc.section.5.1 
+
+### Priority research
+https://tools.ietf.org/html/rfc5245#section-4.1.2 about the calculation of priority.
+http://stackoverflow.com/questions/26342589/how-does-webrtc-decide-which-turn-servers-to-use
+http://stackoverflow.com/questions/31697404/component-id-in-the-ice-candidate about computing priority on candidates
+
+## SCTP
+https://hpbn.co/building-blocks-of-tcp/ tcp handshake similar to sctp handshake.
 
 #Comments on ICE construction:
 [Candidate construction](https://tools.ietf.org/html/rfc5245#page-73) 
