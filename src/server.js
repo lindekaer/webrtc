@@ -53,6 +53,7 @@ function onMessage (message) {
       var morePotentialWaiting = true
       while (morePotentialWaiting) {
         var lastOffer = offers[0]
+        var somethingFound = false
         for (var i = 0; i < waiting.length; i++) {
           const waitingOffer = waiting[i]
           if (waitingOffer.containerUuid !== lastOffer.containerUuid) {
@@ -60,10 +61,11 @@ function onMessage (message) {
               console.log('Retrying...')
             }
             waiting.splice(i, 1)
+            somethingFound = true
             break
           }
         }
-        morePotentialWaiting = false
+        morePotentialWaiting = somethingFound
       }
     }
   }
