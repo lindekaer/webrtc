@@ -45,11 +45,13 @@ function onMessage (message) {
     }
     var offer = offers[0]
     if (msg.containerUuid === offer.containerUuid) {
+      console.log('Setting peer to wait')
       waiting.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid })
     } else {
       while (!sendOfferToPeer(this, msg)) {
         console.log('Retrying...')
       }
+      console.log('Checking waiting...')
       var morePotentialWaiting = true
       while (morePotentialWaiting) {
         var lastOffer = offers[0]
@@ -57,6 +59,7 @@ function onMessage (message) {
         for (var i = 0; i < waiting.length; i++) {
           const waitingOffer = waiting[i]
           if (waitingOffer.containerUuid !== lastOffer.containerUuid) {
+            console.log('Found one! connecting: ' + waitingOffer.uuid)
             while (!sendOfferToPeer(this, msg)) {
               console.log('Retrying...')
             }
@@ -107,9 +110,11 @@ function onClose () {
 }
 
 function sendOfferToPeer (peer, message) {
+  console.log('Sending offer to peer.')
   var offer = offers.shift()
   if (!offer) return false
   peer.send(JSON.stringify(offer))
+  console.log('Settings peers offer to be last offer.')
   offers.push({ payload: message.payload, uuid: message.uuid, type: 'offer' })
   return true
 }
