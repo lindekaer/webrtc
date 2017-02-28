@@ -19,6 +19,7 @@ var wss = new WebSocketServer({ port: 8080 })
 
 var peers = {}
 var offers = []
+var waiting = []
 var firstPeer
 var walker
 var connectedCount = 0
@@ -39,12 +40,29 @@ function onMessage (message) {
     // Ensure to set the first peer
     if (!firstPeer) {
       firstPeer = this
-      offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer' })
+      offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid })
       return
     }
-
-    while (!sendOfferToPeer(this, msg)) {
-      console.log('Retrying...')
+    var offer = offers[0]
+    if (msg.containerUuid === offer.containerUuid) {
+      waiting.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid })
+    } else {
+      while (!sendOfferToPeer(this, msg)) {
+        console.log('Retrying...')
+      }
+      var morePotentialWaiting = true
+      while (morePotentialWaiting) {
+        var lastOffer = offers[0]
+        for (const waitingOffer of waiting) {
+          if (waitingOffer.containerUuid !== lastOffer.containerUuid) {
+            while (!sendOfferToPeer(this, msg)) {
+              console.log('Retrying...')
+            }
+            break
+          }
+        }
+        morePotentialWaiting = false
+      }
     }
   }
 
