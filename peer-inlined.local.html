@@ -2678,7 +2678,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = {
   iceConfig: {
-    iceServers: [{ url: 'stun:stun.I.google.com:19302' }]
+    iceServers: [{
+      urls: [
+        // 'stun:stun.I.google.com:19302',
+        // 'stun:stun1.l.google.com:19302',
+        // 'stun:stun2.l.google.com:19302',
+        // 'stun:stun3.l.google.com:19302',
+        // 'stun:stun4.l.google.com:19302'
+      ]
+    }]
   },
 
   mediaConstraints: {
@@ -2687,7 +2695,7 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://178.62.51.86:8080/socketserver',
+  webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
   uuid: 'SIGNALING_UUID'
 };
 },{}],2:[function(require,module,exports){
@@ -2970,7 +2978,7 @@ class Peer {
         // channel.send(this._waitingOffer)
         break;
       case 'chat':
-        console.log(`FROM (${ message.uuid }): ${ message.payload }`);
+        console.log(`FROM (${message.uuid}): ${message.payload}`);
         break;
       case 'request-offer-for-walker':
         // console.log('Current Channel: ', channel)
@@ -2982,7 +2990,7 @@ class Peer {
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
         break;
       default:
-        console.log(`No case for type: ${ message.type }`);
+        console.log(`No case for type: ${message.type}`);
     }
   }
 }

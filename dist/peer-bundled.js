@@ -7,7 +7,13 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302']
+      urls: [
+        // 'stun:stun.I.google.com:19302',
+        // 'stun:stun1.l.google.com:19302',
+        // 'stun:stun2.l.google.com:19302',
+        // 'stun:stun3.l.google.com:19302',
+        // 'stun:stun4.l.google.com:19302'
+      ]
     }]
   },
 
@@ -300,7 +306,7 @@ class Peer {
         // channel.send(this._waitingOffer)
         break;
       case 'chat':
-        console.log(`FROM (${ message.uuid }): ${ message.payload }`);
+        console.log(`FROM (${message.uuid}): ${message.payload}`);
         break;
       case 'request-offer-for-walker':
         // console.log('Current Channel: ', channel)
@@ -312,7 +318,7 @@ class Peer {
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
         break;
       default:
-        console.log(`No case for type: ${ message.type }`);
+        console.log(`No case for type: ${message.type}`);
     }
   }
 }
