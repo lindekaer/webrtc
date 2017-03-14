@@ -64,7 +64,6 @@ class WalkerPeer {
       const answer = await this._currentCon.createAnswer()
       this._currentCon.setLocalDescription(answer)
       this._currentCon.onicecandidate = (candidate) => {
-        console.log(candidate.candidate)
         if (candidate.candidate == null) {
           this._socket.send(JSON.stringify({
             type: 'walker-request-answer',
