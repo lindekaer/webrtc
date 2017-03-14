@@ -95,10 +95,12 @@ function onMessage(message) {
   }
 
   if (msg.type === 'offer-for-walker') {
+    console.log('Sending offer to walker');
     walker.send(JSON.stringify(msg.payload));
   }
 
   if (msg.type === 'walker-request-answer') {
+    console.log('Sending walker answer to first peer');
     firstPeer.send(JSON.stringify(msg));
   }
 }

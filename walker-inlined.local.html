@@ -2688,10 +2688,10 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
-  uuid: 'SIGNALING_UUID'
-  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
+  // uuid: 'SIGNALING_UUID'
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -2774,7 +2774,6 @@ class WalkerPeer {
         const answer = yield _this._currentCon.createAnswer();
         _this._currentCon.setLocalDescription(answer);
         _this._currentCon.onicecandidate = function (candidate) {
-          console.log(candidate.candidate);
           if (candidate.candidate == null) {
             _this._socket.send(JSON.stringify({
               type: 'walker-request-answer',

@@ -78,7 +78,6 @@ class WalkerPeer {
         const answer = yield _this._currentCon.createAnswer();
         _this._currentCon.setLocalDescription(answer);
         _this._currentCon.onicecandidate = function (candidate) {
-          console.log(candidate.candidate);
           if (candidate.candidate == null) {
             _this._socket.send(JSON.stringify({
               type: 'walker-request-answer',
