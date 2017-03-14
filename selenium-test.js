@@ -48,23 +48,10 @@ if (type === 'walker') {
   driver.quit()
 } else {
   driver.get(path)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  setTimeout(() => {
-    console.log('**NEXT**')
-  }, 5000)
+  for (let i = 0; i < numberOfPeers; i++) {
+    driver.executeScript(`window.open('${path}');`)
+  }
+  console.log('**NEXT**')
   // driver.get(`file:///app/index.html`)
   // let count = 0
   // setTimeout(() => {
