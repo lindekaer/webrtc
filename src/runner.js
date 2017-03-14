@@ -75,7 +75,7 @@ function createDockerImage (cb) {
 
 function createBootPeer (cb) {
   const UUID = uuid.v1()
-  spawn('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID])
+  spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID])
   setTimeout(cb, 5000)
 }
 
@@ -88,7 +88,7 @@ function runContainer (currentNum, type, cb) {
   const UUID = uuid.v1()
 
   // Spawn child process
-  const child = spawn('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID])
+  const child = spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID])
   child.stdout.on('data', function (data) {
     console.log(data.toString())
     if (data.toString().indexOf('**NEXT**') !== -1) {
@@ -98,7 +98,7 @@ function runContainer (currentNum, type, cb) {
 }
 
 function startWalker (cb) {
-  const child = spawn('docker', ['run', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL])
+  const child = spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL])
   let numConnections = 0
   let durations = []
   let timeTotal = 0

@@ -76,6 +76,7 @@ class Peer {
       this._socket.send(this._readyOffer)
     }
     if (msg.type === 'walker-request-answer') {
+      console.log('Got answer from walker')
       this.connectWalker(msg.payload, msg.walkerId)
     }
     if (msg.type === 'request-offer-for-walker') {
@@ -163,7 +164,9 @@ class Peer {
   }
 
   connectWalker (sdp, walkerId) {
-    // console.log('connect walkerId: ', walkerId)
+    console.log('connect walkerId: ' + walkerId)
+    console.log('with sdp: ' + JSON.stringify(sdp))
+    console.log(this._connectionsAwaitingAnswer[[walkerId]])
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp)
   }
 
