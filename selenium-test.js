@@ -48,7 +48,7 @@ if (type === 'walker') {
   driver.quit()
 } else {
   driver.get(path)
-  for (let i = 0; i < numberOfPeers; i++) {
+  for (let i = 0; i < numberOfPeers - 1; i++) {
     driver.executeScript(`window.open('${path}');`)
   }
   setTimeout(() => {
