@@ -1,67 +1,73 @@
-'use strict';
+// /*
+// -----------------------------------------------------------------------------------
+// |
+// | Imports
+// |
+// -----------------------------------------------------------------------------------
+// */
 
-var _minimist = require('minimist');
+// import minimist from 'minimist'
+// import request from 'request'
 
-var _minimist2 = _interopRequireDefault(_minimist);
+// /*
+// -----------------------------------------------------------------------------------
+// |
+// | CLI configuration
+// |
+// -----------------------------------------------------------------------------------
+// */
 
-var _request = require('request');
+// const argv = minimist((process.argv.slice(2)))
+// const URL_CREATE_DROPLET = 'https://api.digitalocean.com/v2/droplets'
+// const DIGITAL_OCEAN_TOKEN = argv.t || argv.token || 'c727c768c699938c9e88c8e8a0a84d43a22d792f04e663fdcedff7df7b913021'
+// const COMMAND = argv.c || argv.command || 'help'
 
-var _request2 = _interopRequireDefault(_request);
+// const controller = {
+//   help: displayHelp(),
+//   'create-droplet': createDroplet()
+// }
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+// controller[COMMAND]
 
-/*
------------------------------------------------------------------------------------
-|
-| CLI configuration
-|
------------------------------------------------------------------------------------
-*/
 
-/*
------------------------------------------------------------------------------------
-|
-| Imports
-|
------------------------------------------------------------------------------------
-*/
+// /*
+// -----------------------------------------------------------------------------------
+// |
+// | Functions
+// |
+// -----------------------------------------------------------------------------------
+// */
 
-const argv = (0, _minimist2.default)(process.argv.slice(2));
-const URL_CREATE_DROPLET = 'https://api.digitalocean.com/v2/droplets';
-const DIGITAL_OCEAN_TOKEN = argv.t || argv.token || 'c727c768c699938c9e88c8e8a0a84d43a22d792f04e663fdcedff7df7b913021';
-const COMMAND = argv.c || argv.command || 'help';
+// function displayHelp () {
+//   console.log('HELP!!!!')
+// }
 
-const controller = {
-  help: displayHelp(),
-  'create-droplet': createDroplet()
-};
+// function createDroplet () {
+//   const options = {
+//     method: 'POST',
+//     url: URL_CREATE_DROPLET,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       Authorization: `Bearer ${DIGITAL_OCEAN_TOKEN}`
+//     }
+//     body: {
+//       name:"example.com",
+//       region:"nyc3",
+//       size:"512mb",
+//       image:"ubuntu-14-04-x64",
+//       ssh_keys:null,
+//       backups:false,
+//       ipv6:true,
+//       user_data:null,
+//       private_networking:null,
+//       volumes: null,
+//       tags:["web"]
+//     }
+//   }
 
-controller[COMMAND];
-
-/*
------------------------------------------------------------------------------------
-|
-| Functions
-|
------------------------------------------------------------------------------------
-*/
-
-function displayHelp() {
-  console.log('HELP!!!!');
-}
-
-function createDroplet() {
-  const options = {
-    method: 'POST',
-    url: URL_CREATE_DROPLET,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${DIGITAL_OCEAN_TOKEN}`
-    }
-  };
-
-  (0, _request2.default)(options, (err, res, body) => {
-    if (err) throw err;
-    if (res.statusCode !== 200) console.log('An error occured!');
-  });
-}
+//   request(options, (err, res, body) => {
+//     if (err) throw err
+//     if (res.statusCode !== 200) console.log('An error occured!')
+//   })
+// }
+"use strict";
