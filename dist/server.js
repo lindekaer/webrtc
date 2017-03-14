@@ -20,7 +20,7 @@ var wss = new WebSocketServer({ port: 8080 });
 */
 
 var peers = {};
-var offers = [];
+var currentOffer = {};
 var waiting = [];
 var firstPeer;
 var walker;
@@ -41,13 +41,14 @@ function onMessage(message) {
 
     // Ensure to set the first peer
     if (!firstPeer) {
+      console.log('Setting first peer from: ' + msg.containerUuid + ' with id: ' + msg.uuid);
       firstPeer = this;
-      offers.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid });
+      currentOffer = { payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid };
       return;
     }
-    var offer = offers[0];
-    if (msg.containerUuid === offer.containerUuid) {
-      console.log('Setting peer to wait');
+    // var offer = currentOffer[0]
+    if (msg.containerUuid === currentOffer.containerUuid) {
+      console.log('Setting peer to wait, from: ' + msg.containerUuid + ' with id: ' + msg.uuid);
       waiting.push({ payload: msg.payload, uuid: msg.uuid, type: 'offer', containerUuid: msg.containerUuid });
     } else {
       while (!sendOfferToPeer(this, msg)) {
@@ -56,13 +57,13 @@ function onMessage(message) {
       console.log('Checking waiting...');
       var morePotentialWaiting = true;
       while (morePotentialWaiting) {
-        var lastOffer = offers[0];
+        var lastOffer = currentOffer;
         var somethingFound = false;
         for (var i = 0; i < waiting.length; i++) {
           const waitingOffer = waiting[i];
           if (waitingOffer.containerUuid !== lastOffer.containerUuid) {
-            console.log('Found one! connecting: ' + waitingOffer.uuid);
-            while (!sendOfferToPeer(this, msg)) {
+            console.log('Found one! connecting to peer from: ' + waitingOffer.containerUuid + ' with id: ' + waitingOffer.uuid);
+            while (!sendOfferToPeer(peers[waitingOffer.uuid], waitingOffer)) {
               console.log('Retrying...');
             }
             waiting.splice(i, 1);
@@ -72,11 +73,13 @@ function onMessage(message) {
         }
         morePotentialWaiting = somethingFound;
       }
+      console.log('Done checking waiting.');
     }
   }
 
   if (msg.type === 'answer') {
-    peers[msg.uuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }));
+    console.log('Sending answer to: ' + msg.toUuid + ' from: ' + msg.uuid);
+    peers[msg.toUuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }));
   }
 
   if (msg.type === 'walker-request') {
@@ -107,16 +110,16 @@ function onClose() {
     firstPeer = undefined;
     walker = undefined;
     peers = {};
-    offers = [];
+    currentOffer = {};
   }
 }
 
 function sendOfferToPeer(peer, message) {
-  console.log('Sending offer to peer.');
-  var offer = offers.shift();
-  if (!offer) return false;
-  peer.send(JSON.stringify(offer));
-  console.log('Settings peers offer to be last offer.');
-  offers.push({ payload: message.payload, uuid: message.uuid, type: 'offer' });
+  console.log('Sending offer from ' + currentOffer.uuid + ' to: ' + message.containerUuid + ' with id: ' + message.uuid);
+  // var offer = currentOffer.shift()
+  if (!currentOffer) return false;
+  peer.send(JSON.stringify(currentOffer));
+  // console.log('Setting peers offer to be last offer.')
+  currentOffer = { payload: message.payload, uuid: message.uuid, type: 'offer', containerUuid: message.containerUuid };
   return true;
 }

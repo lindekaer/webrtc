@@ -7,13 +7,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      urls: [
-        // 'stun:stun.I.google.com:19302',
-        // 'stun:stun1.l.google.com:19302',
-        // 'stun:stun2.l.google.com:19302',
-        // 'stun:stun3.l.google.com:19302',
-        // 'stun:stun4.l.google.com:19302'
-      ]
+      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302']
     }]
   },
 
@@ -23,8 +17,8 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID'
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -103,9 +97,11 @@ class Peer {
     const msg = JSON.parse(message.data);
     // console.log('Got from socket: ' + message.data)
     if (msg.type === 'offer') {
+      console.log('Got offer from: ' + msg.uuid);
       this.consume('offer', msg.payload, msg.uuid);
     }
     if (msg.type === 'answer') {
+      console.log('Got answer from: ' + msg.uuid);
       this.consume('answer', msg.payload);
     }
     if (msg.type === 'walker-request') {
@@ -228,6 +224,7 @@ class Peer {
         _this2._initializedCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
             console.log('Sending joining msg');
+            console.log('My id is: ' + _this2._uuid);
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this2._initializedCon.localDescription,
@@ -259,7 +256,8 @@ class Peer {
               _this3._socket.send(JSON.stringify({
                 type: 'answer',
                 payload: _this3._recievedCon.localDescription,
-                uuid: inputUuid
+                toUuid: inputUuid,
+                uuid: _this3._uuid
               }));
             }
           };

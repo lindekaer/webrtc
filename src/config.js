@@ -3,11 +3,11 @@ export default {
     iceServers: [
       {
         urls: [
-          // 'stun:stun.I.google.com:19302',
-          // 'stun:stun1.l.google.com:19302',
-          // 'stun:stun2.l.google.com:19302',
-          // 'stun:stun3.l.google.com:19302',
-          // 'stun:stun4.l.google.com:19302'
+          'stun:stun.I.google.com:19302',
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302',
+          'stun:stun3.l.google.com:19302',
+          'stun:stun4.l.google.com:19302'
         ]
       }
     ]
@@ -19,6 +19,6 @@ export default {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID'
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 }
