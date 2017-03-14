@@ -49,7 +49,7 @@ function createDroplet () {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${DIGITAL_OCEAN_TOKEN}`
-    }
+    },
     body: {
       name:"example.com",
       region:"nyc3",

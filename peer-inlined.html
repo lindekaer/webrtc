@@ -2874,8 +2874,9 @@ class Peer {
   }
 
   connectWalker(sdp, walkerId) {
-    console.log('connect walkerId: ', walkerId);
-    console.log('with sdp: ' + sdp);
+    console.log('connect walkerId: ' + walkerId);
+    console.log('with sdp: ' + JSON.stringify(sdp));
+    console.log(this._connectionsAwaitingAnswer[[walkerId]]);
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp);
   }
 
