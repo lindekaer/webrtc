@@ -42,28 +42,28 @@
 //   console.log('HELP!!!!')
 // }
 
-// function createDroplet () {
-//   const options = {
-//     method: 'POST',
-//     url: URL_CREATE_DROPLET,
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer ${DIGITAL_OCEAN_TOKEN}`
-//     }
-//     body: {
-//       name:"example.com",
-//       region:"nyc3",
-//       size:"512mb",
-//       image:"ubuntu-14-04-x64",
-//       ssh_keys:null,
-//       backups:false,
-//       ipv6:true,
-//       user_data:null,
-//       private_networking:null,
-//       volumes: null,
-//       tags:["web"]
-//     }
-//   }
+function createDroplet () {
+  const options = {
+    method: 'POST',
+    url: URL_CREATE_DROPLET,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${DIGITAL_OCEAN_TOKEN}`
+    },
+    body: {
+      name:"example.com",
+      region:"nyc3",
+      size:"512mb",
+      image:"ubuntu-14-04-x64",
+      ssh_keys:null,
+      backups:false,
+      ipv6:true,
+      user_data:null,
+      private_networking:null,
+      volumes: null,
+      tags:["web"]
+    }
+  }
 
 //   request(options, (err, res, body) => {
 //     if (err) throw err
