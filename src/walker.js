@@ -41,6 +41,7 @@ class WalkerPeer {
   }
 
   onSocketMessage (message) {
+    console.log('Got message from socket: ' + message.data)
     this.consume(message.data)
   }
 
@@ -96,7 +97,7 @@ class WalkerPeer {
         this._nextCon.onicecandidate = (candidate) => {
           // console.log('Got candidate event')
           if (candidate.candidate == null) {
-            // console.log('Sending answer to node ' + this._nodeCount)
+            console.log('Sending answer to node ' + this._nodeCount)
             channel.send(JSON.stringify({
               type: 'walker-to-middle',
               payload: this._nextCon.localDescription,
