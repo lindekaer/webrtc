@@ -13,9 +13,6 @@ import colors from 'colors'
 import path from 'path'
 import minimist from 'minimist'
 import ms from 'ms'
-import fs from 'fs'
-
-// node dist/runner.js --num-containers 2 --num-peers 10 --signaling-url ws://192.168.1.144:8080/socketserver
 
 /*
 -----------------------------------------------------------------------------------
@@ -33,7 +30,6 @@ const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketser
 const TIMEOUT = args['timeout'] || ms('5m')
 const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${uuid.v1()}`
-const DATA_SHEET_PATH = path.join(__dirname, '..', 'data', args['output-file'] || `${Date.now()}_test_result.data`)
 
 if (MODE === 'full') {
   async.series([
@@ -134,8 +130,6 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
-
-          fs.appendFile(DATA_SHEET_PATH, `${duration}\n`, (err) => {})
 
           timeTotal += duration
 
