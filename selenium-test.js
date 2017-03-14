@@ -47,34 +47,34 @@ if (type === 'walker') {
   driver.wait(doneSignalFired)
   driver.quit()
 } else {
-  driver.get(path)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
-  driver.executeScript(`window.open('${path}');`)
+  // driver.get(path)
+  // driver.executeScript(`window.open('${path}');`)
+  // driver.executeScript(`window.open('${path}');`)
+  // driver.executeScript(`window.open('${path}');`)
+  // driver.executeScript(`window.open('${path}');`)
   setTimeout(() => {
     console.log('**NEXT**')
   }, 5000)
-  // driver.get(`file:///app/index.html`)
-  // let count = 0
-  // setTimeout(() => {
-  //   async.whilst(
-  //     () => {
-  //       return count < numberOfPeers
-  //     },
-  //     (cb) => {
-  //       count++
-  //       console.log('Peer spawning, number: ', count)
-  //       driver.executeScript(`window.open('${path}');`)
-  //       setTimeout(() => { cb(null, count) }, 100)
-  //     },
-  //     () => {
-  //       setTimeout(() => {
-  //         console.log('**NEXT**')
-  //       }, 500)
-  //     }
-  //   )
-  // }, 2000)
+  driver.get(`file:///app/index.html`)
+  let count = 0
+  setTimeout(() => {
+    async.whilst(
+      () => {
+        return count < numberOfPeers
+      },
+      (cb) => {
+        count++
+        console.log('Peer spawning, number: ', count)
+        driver.executeScript(`window.open('${path}');`)
+        setTimeout(() => { cb(null, count) }, 1000)
+      },
+      () => {
+        setTimeout(() => {
+          console.log('**NEXT**')
+        }, 500)
+      }
+    )
+  }, 2000)
   driver.wait(doneSignalFired)
   driver.quit()
 }
