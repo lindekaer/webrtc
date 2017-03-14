@@ -77,6 +77,7 @@ class WalkerPeer {
   }
 
   onSocketMessage(message) {
+    console.log('Got message from socket: ' + message.data);
     this.consume(message.data);
   }
 
@@ -95,6 +96,7 @@ class WalkerPeer {
     var _this = this;
 
     return _asyncToGenerator(function* () {
+      console.log('Consuming');
       try {
         const message = JSON.parse(rawMessage);
         const offer = new RTCSessionDescription(message);
@@ -103,13 +105,14 @@ class WalkerPeer {
         const answer = yield _this._currentCon.createAnswer();
         _this._currentCon.setLocalDescription(answer);
         _this._currentCon.onicecandidate = function (candidate) {
-          console.log(candidate.candidate);
           if (candidate.candidate == null) {
-            _this._socket.send(JSON.stringify({
+            var answer = JSON.stringify({
               type: 'walker-request-answer',
               payload: _this._currentCon.localDescription,
               walkerId: _this._uuid
-            }));
+            });
+            _this._socket.send(answer);
+            console.log('Sending answer back: ' + answer);
           }
         };
       } catch (err) {
@@ -137,12 +140,14 @@ class WalkerPeer {
         this._nextCon.onicecandidate = candidate => {
           // console.log('Got candidate event')
           if (candidate.candidate == null) {
-            // console.log('Sending answer to node ' + this._nodeCount)
-            channel.send(JSON.stringify({
+            var answer = JSON.stringify({
               type: 'walker-to-middle',
               payload: this._nextCon.localDescription,
               walkerId: this._uuid
-            }));
+            });
+            // console.log('Sending answer to node ' + this._nodeCount)
+            console.log('Sending answer back: ' + answer);
+            channel.send(answer);
           }
         };
       };
