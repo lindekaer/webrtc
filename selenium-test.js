@@ -52,9 +52,9 @@ if (type === 'walker') {
   // driver.executeScript(`window.open('${path}');`)
   // driver.executeScript(`window.open('${path}');`)
   // driver.executeScript(`window.open('${path}');`)
-  setTimeout(() => {
-    console.log('**NEXT**')
-  }, 5000)
+  // setTimeout(() => {
+  //   console.log('**NEXT**')
+  // }, 5000)
   driver.get(`file:///app/index.html`)
   let count = 0
   setTimeout(() => {
