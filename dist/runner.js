@@ -26,13 +26,7 @@ var _ms = require('ms');
 
 var _ms2 = _interopRequireDefault(_ms);
 
-var _fs = require('fs');
-
-var _fs2 = _interopRequireDefault(_fs);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// node dist/runner.js --num-containers 2 --num-peers 10 --signaling-url ws://192.168.1.144:8080/socketserver
 
 /*
 -----------------------------------------------------------------------------------
@@ -42,15 +36,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 -----------------------------------------------------------------------------------
 */
 
-/*
------------------------------------------------------------------------------------
-|
-| Imports
-|
------------------------------------------------------------------------------------
-*/
-
-const args = (0, _minimist2.default)(process.argv.slice(2));
+const args = (0, _minimist2.default)(process.argv.slice(2)); /*
+                                                             -----------------------------------------------------------------------------------
+                                                             |
+                                                             | Imports
+                                                             |
+                                                             -----------------------------------------------------------------------------------
+                                                             */
 
 const NUM_CONTAINERS = args['num-containers'] || 10;
 const NUM_PEERS = args['num-peers'] || 20;
@@ -58,7 +50,6 @@ const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketser
 const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
-const DATA_SHEET_PATH = _path2.default.join(__dirname, '..', 'data', args['output-file'] || `${Date.now()}_test_result.data`);
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -156,8 +147,6 @@ function startWalker(cb) {
           if (duration > timeMax) timeMax = duration;
 
           durations.push(duration);
-
-          _fs2.default.appendFile(DATA_SHEET_PATH, `${duration}\n`, err => {});
 
           timeTotal += duration;
 

@@ -8,12 +8,11 @@
 
 var webdriver = require('selenium-webdriver')
 var chrome = require('selenium-webdriver/chrome')
-var async = require('async')
 
 /*
 -----------------------------------------------------------------------------------
 |
-| Test
+| Selenium test
 |
 -----------------------------------------------------------------------------------
 */
@@ -26,11 +25,13 @@ var numberOfPeers = parseInt(process.argv[3])
 var loggingPreferences = new webdriver.logging.Preferences()
 loggingPreferences.setLevel(webdriver.logging.Type.BROWSER, webdriver.logging.Level.ALL)
 
+// Configure the Chrome Driver
 var chromeOptions = new chrome.Options()
 chromeOptions.addArguments('--no-sandbox')
 chromeOptions.addArguments('--enable-logging')
 chromeOptions.setLoggingPrefs(loggingPreferences)
 
+// Create a driver instance
 var driver = new webdriver.Builder()
   .forBrowser(webdriver.Browser.CHROME)
   .setChromeOptions(chromeOptions)
@@ -38,35 +39,18 @@ var driver = new webdriver.Builder()
 
 const path = `file:///app/${type}.html`
 
-// type = 'peer'
-// numberOfPeers = 5
-// const path = type === 'peer' ? `file:///Users/theo/Sites/webrtc/peer-inlined.local.html` : `file:///Users/theo/Sites/webrtc/walker-inlined.local.html`
-
 if (type === 'walker') {
   driver.get(path)
   driver.wait(doneSignalFired)
   driver.quit()
 } else {
-  driver.get(`file:///app/index.html`)
-  let count = 0
+  driver.get(path)
+  for (let i = 1; i < numberOfPeers; i++) {
+    driver.executeScript(`window.open('${path}');`)
+  }
   setTimeout(() => {
-    async.whilst(
-      () => {
-        return count < numberOfPeers
-      },
-      (cb) => {
-        count++
-        console.log('Peer spawning, number: ', count)
-        driver.executeScript(`window.open('${path}');`)
-        setTimeout(() => { cb(null, count) }, 100)
-      },
-      () => {
-        setTimeout(() => {
-          console.log('**NEXT**')
-        }, 500)
-      }
-    )
-  }, 2000)
+    console.log('**NEXT**')
+  }, 10000)
   driver.wait(doneSignalFired)
   driver.quit()
 }
@@ -97,3 +81,25 @@ function doneSignalFired () {
     })
   })().then(() => true)
 }
+
+
+// driver.get(`file:///app/index.html`)
+// let count = 0
+// setTimeout(() => {
+//   async.whilst(
+//     () => {
+//       return count < numberOfPeers
+//     },
+//     (cb) => {
+//       count++
+//       console.log('Peer spawning, number: ', count)
+//       driver.executeScript(`window.open('${path}');`)
+//       setTimeout(() => { cb(null, count) }, 1000)
+//     },
+//     () => {
+//       setTimeout(() => {
+//         console.log('**NEXT**')
+//       }, 500)
+//     }
+//   )
+// }, 2000)
