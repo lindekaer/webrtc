@@ -43,7 +43,9 @@ if (type === 'walker') {
   driver.get(path)
   driver.wait(doneSignalFired)
   driver.quit()
-} else {
+}
+
+if (type === 'peer') {
   driver.get(path)
   for (let i = 1; i < numberOfPeers; i++) {
     driver.executeScript(`window.open('${path}');`)
@@ -81,7 +83,6 @@ function doneSignalFired () {
     })
   })().then(() => true)
 }
-
 
 // driver.get(`file:///app/index.html`)
 // let count = 0
