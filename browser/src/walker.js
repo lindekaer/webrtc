@@ -98,20 +98,17 @@ class WalkerPeer {
 
   handleMessage (message) {
     console.log('---------------------------------')
-    console.log(message)
+    console.log(JSON.stringify(message))
     switch (message.type) {
       case 'answer-for-walker':
-        console.log(JSON.stringify(message.payload))
         this._lastPeerCon.setRemoteDescription(new window.RTCSessionDescription(message.payload))
         break
       case 'ice-candidate-for-walker':
         console.log('ice-candidate-for-walker')
-        console.log(JSON.stringify(message.payload))
         this._lastPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload))
         break
       case 'walker-joining-ice-candidate':
         console.log('walker-joining-ice-candidate')
-        console.log(JSON.stringify(message.payload))
         this._firstPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload))
         break
       case 'walker-joining-answer':
@@ -162,6 +159,7 @@ class WalkerPeer {
         payload: con.localDescription,
         uuid: this._uuid
       })
+      this._lastPeerCon = con
 
       console.log('Initiating request to connect with last peer')
       // console.log(JSON.stringify(jsonOffer))
