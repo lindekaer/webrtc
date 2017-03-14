@@ -65,11 +65,11 @@ class Peer {
     const msg = JSON.parse(message.data)
     // console.log('Got from socket: ' + message.data)
     if (msg.type === 'offer') {
-      console.log('Got offer from: ' + msg.uuid)
+      console.log('Got offer from: ' + msg.uuid + 'from: ' + msg.containerUuid)
       this.consume('offer', msg.payload, msg.uuid)
     }
     if (msg.type === 'answer') {
-      console.log('Got answer from: ' + msg.uuid)
+      console.log('Got answer from: ' + msg.uuid + 'from: ' + msg.containerUuid)
       this.consume('answer', msg.payload)
     }
     if (msg.type === 'walker-request') {
@@ -185,7 +185,7 @@ class Peer {
       this._initializedCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {
           console.log('Sending joining msg')
-          console.log('My id is: ' + this._uuid)
+          console.log('My id is: ' + this._uuid + ' from ' + config.uuid)
           const msg = JSON.stringify({
             type: 'joining',
             payload: this._initializedCon.localDescription,
@@ -214,7 +214,8 @@ class Peer {
               type: 'answer',
               payload: this._recievedCon.localDescription,
               toUuid: inputUuid,
-              uuid: this._uuid
+              uuid: this._uuid,
+              containerUuid: config.uuid
             }))
           }
         }

@@ -79,7 +79,7 @@ function onMessage(message) {
 
   if (msg.type === 'answer') {
     console.log('Sending answer to: ' + msg.toUuid + ' from: ' + msg.uuid);
-    peers[msg.toUuid].send(JSON.stringify({ payload: msg.payload, type: 'answer' }));
+    peers[msg.toUuid].send(JSON.stringify({ payload: msg.payload, type: 'answer', containerUuid: msg.containerUuid }));
   }
 
   if (msg.type === 'walker-request') {
@@ -115,7 +115,7 @@ function onClose() {
 }
 
 function sendOfferToPeer(peer, message) {
-  console.log('Sending offer from ' + currentOffer.uuid + ' to: ' + message.containerUuid + ' with id: ' + message.uuid);
+  // console.log('Sending offer from ' + currentOffer.uuid + ' to: ' + message.containerUuid + ' with id: ' + message.uuid)
   // var offer = currentOffer.shift()
   if (!currentOffer) return false;
   peer.send(JSON.stringify(currentOffer));
