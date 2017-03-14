@@ -17,10 +17,10 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID'
-  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // webSocketUrl: 'SIGNALING_URL',
+  // uuid: 'SIGNALING_UUID'
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -110,6 +110,7 @@ class Peer {
       this._socket.send(this._readyOffer);
     }
     if (msg.type === 'walker-request-answer') {
+      console.log('Got answer from walker');
       this.connectWalker(msg.payload, msg.walkerId);
     }
     if (msg.type === 'request-offer-for-walker') {
@@ -201,7 +202,8 @@ class Peer {
   }
 
   connectWalker(sdp, walkerId) {
-    // console.log('connect walkerId: ', walkerId)
+    console.log('connect walkerId: ', walkerId);
+    console.log('with sdp: ' + sdp);
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp);
   }
 
