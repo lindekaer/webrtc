@@ -66,11 +66,13 @@ class WalkerPeer {
       this._currentCon.setLocalDescription(answer)
       this._currentCon.onicecandidate = (candidate) => {
         if (candidate.candidate == null) {
-          this._socket.send(JSON.stringify({
+          var answer = JSON.stringify({
             type: 'walker-request-answer',
             payload: this._currentCon.localDescription,
             walkerId: this._uuid
-          }))
+          })
+          this._socket.send(answer)
+          console.log('Sending answer back: ' + answer)
         }
       }
     } catch (err) {

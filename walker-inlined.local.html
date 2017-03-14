@@ -2776,11 +2776,13 @@ class WalkerPeer {
         _this._currentCon.setLocalDescription(answer);
         _this._currentCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
-            _this._socket.send(JSON.stringify({
+            var answer = JSON.stringify({
               type: 'walker-request-answer',
               payload: _this._currentCon.localDescription,
               walkerId: _this._uuid
-            }));
+            });
+            _this._socket.send(answer);
+            console.log('Sending answer back: ' + answer);
           }
         };
       } catch (err) {
