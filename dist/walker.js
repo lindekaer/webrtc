@@ -71,6 +71,7 @@ class WalkerPeer {
     var _this = this;
 
     return _asyncToGenerator(function* () {
+      console.log('Consuming');
       try {
         const message = JSON.parse(rawMessage);
         const offer = new RTCSessionDescription(message);

@@ -57,6 +57,7 @@ class WalkerPeer {
   }
 
   async consume (rawMessage) {
+    console.log('Consuming')
     try {
       const message = JSON.parse(rawMessage)
       const offer = new RTCSessionDescription(message)
