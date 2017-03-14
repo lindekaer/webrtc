@@ -49,6 +49,9 @@ if (type === 'walker') {
 } else {
   driver.get(path)
   driver.executeScript(`window.open('${path}');`)
+  driver.executeScript(`window.open('${path}');`)
+  driver.executeScript(`window.open('${path}');`)
+  driver.executeScript(`window.open('${path}');`)
   setTimeout(() => {
     console.log('**NEXT**')
   }, 5000)
