@@ -47,9 +47,9 @@ if (type === 'walker') {
 
 if (type === 'peer') {
   driver.get(path)
-  // for (let i = 1; i < numberOfPeers; i++) {
-  //   driver.executeScript(`window.open('${path}');`)
-  // }
+  for (let i = 1; i < numberOfPeers; i++) {
+    driver.executeScript(`window.open('${path}');`)
+  }
   setTimeout(() => {
     console.log('**NEXT**')
   }, 10000)
