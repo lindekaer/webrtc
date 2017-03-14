@@ -16,8 +16,8 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'SIGNALING_URL',
-  // uuid: 'SIGNALING_UUID'
-  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
-  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  webSocketUrl: 'SIGNALING_URL',
+  uuid: 'SIGNALING_UUID'
+  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
