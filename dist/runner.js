@@ -137,6 +137,13 @@ function startWalker(cb) {
         line = line.split(' - ');
         let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length));
 
+        console.log('------------');
+        console.log('TIMESTAMP');
+        console.log(timestamp);
+        console.log('PREV');
+        console.log(prevTime);
+        console.log('------------');
+
         if (prevTime) {
           duration = timestamp - prevTime;
 

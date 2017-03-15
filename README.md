@@ -14,6 +14,7 @@ sudo apt-get update -y
 sudo apt-get install nodejs -y
 sudo apt-get install nodejs-legacy -y
 sudo apt-get install npm -y
+sudo apt-get install git -y
 cd / 
 git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git
 cd /webrtc
