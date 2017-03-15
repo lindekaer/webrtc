@@ -32,6 +32,7 @@ const TIMEOUT = args['timeout'] || ms('5m')
 const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${uuid.v1()}`
 const ID = args['id']
+const FIRST_PEER = args['first-peer']
 
 if (MODE === 'full') {
   async.series([
@@ -47,7 +48,7 @@ if (MODE === 'full') {
 if (MODE === 'spawn') {
   async.series([
     createDockerImage,
-    createBootPeer,
+    FIRST_PEER ? createBootPeer : noop,
     (cb) => { sleep(5000, cb) },
     (cb) => { runContainer(0, 'peer', cb) },
     (cb) => { sleep(TIMEOUT, cb) }
@@ -77,6 +78,7 @@ function createDockerImage (cb) {
 }
 
 function createBootPeer (cb) {
+  console.log('Launching a boot peer...')
   const UUID = uuid.v1()
   spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID])
   setTimeout(cb, 5000)
@@ -141,7 +143,7 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
-          fs.writeFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {})
+          fs.appendFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {})
 
           timeTotal += duration
 
@@ -214,4 +216,8 @@ function calculateVariance (inputs, mean) {
 
 function calculateStandardDeviation (variance) {
   return Math.sqrt(variance)
+}
+
+function noop (cb) {
+  cb()
 }
