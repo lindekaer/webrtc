@@ -10,6 +10,8 @@ import minimist from 'minimist'
 import request from 'request'
 import colors from 'colors'
 import async from 'async'
+import exec from 'ssh-exec'
+import { exec as localExec } from 'child_process'
 
 
 /*
@@ -69,6 +71,11 @@ async function createDropletSequence () {
     const ip = await getDropletIpWhenReady(id)
     console.log(`${colors.green('Digital Ocean ID:')} ${id}`)
     console.log(`${colors.green('IP:')} ${ip}`)
+    console.log('')
+    console.log(colors.yellow.bold('Provisioning droplet...'))
+    await sleep(30000)
+    await addIpToKnownHosts(ip)
+    await provisionDroplet(ip)
     console.log('')
   } catch (err) {
     console.log(err)
@@ -153,7 +160,7 @@ function getDropletIpWhenReady (id) {
             ip = droplet.networks.v4[0].ip_address
             cb()
           })
-        }, 1500)
+        }, 5000)
       }, (err, n) => {
         if (err) reject(err)
         resolve(ip)
@@ -176,5 +183,48 @@ function destroyDroplet () {
       if (err) reject(err)
       resolve()
     })
+  })
+}
+
+function addIpToKnownHosts (ip) {
+  return new Promise((resolve, reject) => {
+    localExec(`ssh-keyscan ${ip}`, (err, stdout, stderr) => {
+      if (err) reject(err)
+      var arr = stdout.split('\n')
+      for (let line of arr) {
+        if (line.indexOf(`${ip} ecdsa-sha2-nistp256 `) !== -1) {
+          console.log('Retrieved RSA fingerprint for droplet')
+          localExec(`echo "${line}" >> ~/.ssh/known_hosts`, (err, stdout, stderr) => {
+            if (err) reject(err)
+            console.log('Added RSA fingerprint to known hosts')
+          })
+        }
+      }
+      resolve()
+    })
+  })
+}
+
+function provisionDroplet (ip) {
+  const command = `
+    apt-get install git -y;
+    cd /;
+    git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git;
+    cd /webrtc;
+    git checkout jit-docker;
+    ls -l;
+  `
+  return new Promise((resolve, reject) => {
+    exec(command, `root@${ip}`, (err, stdout, stderr) => {
+      console.log(err)
+      console.log(stdout)
+      console.log(stderr)
+    })
+  })
+}
+
+function sleep (millis) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, millis)
   })
 }

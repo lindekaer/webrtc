@@ -11,6 +11,11 @@ let createDropletSequence = (() => {
       console.log(`${_colors2.default.green('Digital Ocean ID:')} ${id}`);
       console.log(`${_colors2.default.green('IP:')} ${ip}`);
       console.log('');
+      console.log(_colors2.default.yellow.bold('Provisioning droplet...'));
+      yield sleep(30000);
+      yield addIpToKnownHosts(ip);
+      yield provisionDroplet(ip);
+      console.log('');
     } catch (err) {
       console.log(err);
     }
@@ -54,6 +59,12 @@ var _colors2 = _interopRequireDefault(_colors);
 var _async = require('async');
 
 var _async2 = _interopRequireDefault(_async);
+
+var _sshExec = require('ssh-exec');
+
+var _sshExec2 = _interopRequireDefault(_sshExec);
+
+var _child_process = require('child_process');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -176,7 +187,7 @@ function getDropletIpWhenReady(id) {
           ip = droplet.networks.v4[0].ip_address;
           cb();
         });
-      }, 1500);
+      }, 5000);
     }, (err, n) => {
       if (err) reject(err);
       resolve(ip);
@@ -199,5 +210,48 @@ function destroyDroplet() {
       if (err) reject(err);
       resolve();
     });
+  });
+}
+
+function addIpToKnownHosts(ip) {
+  return new Promise((resolve, reject) => {
+    (0, _child_process.exec)(`ssh-keyscan ${ip}`, (err, stdout, stderr) => {
+      if (err) reject(err);
+      var arr = stdout.split('\n');
+      for (let line of arr) {
+        if (line.indexOf(`${ip} ecdsa-sha2-nistp256 `) !== -1) {
+          console.log('Retrieved RSA fingerprint for droplet');
+          (0, _child_process.exec)(`echo "${line}" >> ~/.ssh/known_hosts`, (err, stdout, stderr) => {
+            if (err) reject(err);
+            console.log('Added RSA fingerprint to known hosts');
+          });
+        }
+      }
+      resolve();
+    });
+  });
+}
+
+function provisionDroplet(ip) {
+  const command = `
+    apt-get install git -y;
+    cd /;
+    git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git;
+    cd /webrtc;
+    git checkout jit-docker;
+    ls -l;
+  `;
+  return new Promise((resolve, reject) => {
+    (0, _sshExec2.default)(command, `root@${ip}`, (err, stdout, stderr) => {
+      console.log(err);
+      console.log(stdout);
+      console.log(stderr);
+    });
+  });
+}
+
+function sleep(millis) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, millis);
   });
 }
