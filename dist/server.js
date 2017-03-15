@@ -111,6 +111,7 @@ function onClose() {
   if (connectedCount === 0) {
     firstPeer = undefined;
     walker = undefined;
+    waiting = [];
     peers = {};
     currentOffer = {};
   }
