@@ -18,3 +18,9 @@ curl -X POST
 "https://api.digitalocean.com/v2/droplets"
 
 c727c768c699938c9e88c8e8a0a84d43a22d792f04e663fdcedff7df7b913021
+
+
+
+
+
+curl -X GET -H "Content-Type: application/json" -H "Authorization: Bearer c727c768c699938c9e88c8e8a0a84d43a22d792f04e663fdcedff7df7b913021" "https://api.digitalocean.com/v2/droplets/42339335"
