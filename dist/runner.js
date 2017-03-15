@@ -57,6 +57,7 @@ const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
 const NUMBER_OF_CONNECTIONS = args['number-of-connections'];
+const ID = args['id'];
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -161,7 +162,7 @@ function startWalker(cb) {
           if (duration > timeMax) timeMax = duration;
 
           durations.push(duration);
-          _fs2.default.writeFile(_path2.default.join(__dirname, '..', 'data', `${Date.now()}_results.data`), () => {});
+          _fs2.default.writeFile(_path2.default.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), () => {});
 
           timeTotal += duration;
 

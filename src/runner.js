@@ -32,6 +32,7 @@ const TIMEOUT = args['timeout'] || ms('5m')
 const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${uuid.v1()}`
 const NUMBER_OF_CONNECTIONS = args['number-of-connections']
+const ID = args['id']
 
 if (MODE === 'full') {
   async.series([
@@ -141,7 +142,7 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
-          fs.writeFile(path.join(__dirname, '..', 'data', `${Date.now()}_results.data`), () => {})
+          fs.writeFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), () => {})
 
           timeTotal += duration
 
