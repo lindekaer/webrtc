@@ -26,6 +26,10 @@ var _ms = require('ms');
 
 var _ms2 = _interopRequireDefault(_ms);
 
+var _fs = require('fs');
+
+var _fs2 = _interopRequireDefault(_fs);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /*
@@ -36,13 +40,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 -----------------------------------------------------------------------------------
 */
 
-const args = (0, _minimist2.default)(process.argv.slice(2)); /*
-                                                             -----------------------------------------------------------------------------------
-                                                             |
-                                                             | Imports
-                                                             |
-                                                             -----------------------------------------------------------------------------------
-                                                             */
+/*
+-----------------------------------------------------------------------------------
+|
+| Imports
+|
+-----------------------------------------------------------------------------------
+*/
+
+const args = (0, _minimist2.default)(process.argv.slice(2));
 
 const NUM_CONTAINERS = args['num-containers'] || 10;
 const NUM_PEERS = args['num-peers'] || 20;
@@ -155,6 +161,7 @@ function startWalker(cb) {
           if (duration > timeMax) timeMax = duration;
 
           durations.push(duration);
+          _fs2.default.writeFile(_path2.default.join(__dirname, '..', 'data', `${Date.now()}_results.data`), () => {});
 
           timeTotal += duration;
 

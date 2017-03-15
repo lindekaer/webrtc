@@ -13,6 +13,7 @@ import colors from 'colors'
 import path from 'path'
 import minimist from 'minimist'
 import ms from 'ms'
+import fs from 'fs'
 
 /*
 -----------------------------------------------------------------------------------
@@ -140,6 +141,7 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
+          fs.writeFile(path.join(__dirname, '..', 'data', `${Date.now()}_results.data`), () => {})
 
           timeTotal += duration
 
