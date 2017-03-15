@@ -2698,13 +2698,13 @@ exports.default = {
 },{}],2:[function(require,module,exports){
 'use strict';
 
-var _config = require('./config');
-
-var _config2 = _interopRequireDefault(_config);
-
 var _uuid = require('uuid');
 
 var _uuid2 = _interopRequireDefault(_uuid);
+
+var _config = require('./config');
+
+var _config2 = _interopRequireDefault(_config);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2716,14 +2716,8 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -----------------------------------------------------------------------------------
                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
 /*
-  This version contains the first implementation of the jit creation
-  and delivery of a walker offer.
-
-  We have noticed that the ICE candidate collection is slow. The problem arise due to
-  it taking 10 seconds from the first and only candidate is found to the last candidate
-  event which is null, triggering the sending of the the offer.
-
-  The walker appears to be unaffected by the ice candidate null time delay problem.
+ This version is the beautified version with full trickle implemented and
+ the ability to togle between using trickle ice and not using it.
 */
 
 /*
@@ -2734,10 +2728,15 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
 -----------------------------------------------------------------------------------
 */
 
+// import webrtc from 'wrtc'
+// import WebSocket from 'uws'
+
+
 const Log = console.log;
 console.log = msg => {
   const data = Date.now() + ' - ' + msg;
   Log(data);
+  document.querySelector('#info').textContent = document.querySelector('#info').textContent + '#!#' + data;
 };
 
 /*
@@ -2758,114 +2757,126 @@ class Peer {
 
   connectToServer() {
     console.log(_config2.default.webSocketUrl);
-    this._socket = new window.WebSocket(_config2.default.webSocketUrl);
-    this._socket.onopen = this.onSocketOpen.bind(this);
-    this._socket.onmessage = this.onSocketMessage.bind(this);
-    this._socket.onerror = err => console.log('Error in socket connection');
+    this.signalingChannel = new window.WebSocket(_config2.default.webSocketUrl);
+    this.signalingChannel.onopen = this.onSocketOpen.bind(this);
+    this.signalingChannel.onmessage = this.onSocketMessage.bind(this);
   }
 
   onSocketOpen() {
-    this.init();
+    this.initialize();
   }
 
   onSocketMessage(message) {
-    const msg = JSON.parse(message.data);
-    // console.log('Got from socket: ' + message.data)
-    if (msg.type === 'offer') {
-      console.log('Got offer from: ' + msg.uuid + 'from: ' + msg.containerUuid);
-      this.consume('offer', msg.payload, msg.uuid);
-    }
-    if (msg.type === 'answer') {
-      console.log('Got answer from: ' + msg.uuid + 'from: ' + msg.containerUuid);
-      this.consume('answer', msg.payload);
-    }
-    if (msg.type === 'walker-request') {
-      this._socket.send(this._readyOffer);
-    }
-    if (msg.type === 'walker-request-answer') {
-      console.log('Got answer from walker');
-      this.connectWalker(msg.payload, msg.walkerId);
-    }
-    if (msg.type === 'request-offer-for-walker') {
-      // console.log('walkerId from socket: ', message)
-      this.createNewWalkerConnection(msg.walkerId, this._socket);
-    }
+    this.handleMessage(message.data, this.signalingChannel);
   }
 
-  init() {
-    this._initializedCon = new RTCPeerConnection(_config2.default.iceConfig);
-    this._recievedCon = new RTCPeerConnection(_config2.default.iceConfig);
-    this._readyCon = new RTCPeerConnection(_config2.default.iceConfig);
+  initialize() {
+    this._entryCon = new window.RTCPeerConnection(_config2.default.iceConfig);
+    this._extensionCon = new window.RTCPeerConnection(_config2.default.iceConfig);
 
-    this._initializedChannel;
-    this._recievedChannel;
-    this._readyChannel;
+    this._entryChannel;
+    this._extensionChannel;
 
-    this._readyOffer;
-
-    this.setupPeerConnection(this._initializedCon);
-    this.setupPeerConnection(this._recievedCon);
-    this.setupPeerConnection(this._readyCon);
-    // this.setupReadyCon()
-    this.createOffer();
+    this.setupPeerConnection(this._entryCon);
+    this.setupPeerConnection(this._extensionCon);
+    this.joinNetwork();
   }
 
   setupPeerConnection(peerConnection) {
     peerConnection.ondatachannel = evt => {
       var channel = evt.channel;
-      this._recievedChannel = channel;
-      channel.onopen = () => {
-        // console.log('Opened connection to revievedPeer')
-        // channel.send(this._readyOffer)
-      };
+      this._extensionChannel = channel;
       channel.onmessage = message => {
-        this.handleChannelMessage(message, channel);
+        this.handleMessage(message.data, channel);
       };
     };
   }
 
-  createNewWalkerConnection(walkerId, requestingChannel) {
+  joinNetwork() {
     var _this = this;
 
     return _asyncToGenerator(function* () {
-      console.log('Start creating new PeerConnection');
-      const con = new RTCPeerConnection(_config2.default.iceConfig);
       try {
-        const dataChannelReady = con.createDataChannel('ready-data-channel');
+        // Create data channel
+        const dataChannel = _this._entryCon.createDataChannel('data-channel');
+        dataChannel.onmessage = function (message) {
+          _this.handleMessage(message.data, dataChannel);
+        };
+        dataChannel.onopen = function () {
+          console.log('Joined network!');
+        };
+        _this._entryChannel = dataChannel;
+
+        // Create the offer for a P2P connection
+        const offer = yield _this._entryCon.createOffer();
+        yield _this._entryCon.setLocalDescription(offer);
+        _this._entryCon.onicecandidate = function (event) {
+          if (event.candidate == null) {
+            const msg = JSON.stringify({
+              type: 'joining',
+              payload: _this._entryCon.localDescription,
+              joinerId: _this._uuid,
+              containerUuid: _config2.default.uuid
+            });
+            _this.signalingChannel.send(msg);
+          }
+        };
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+  }
+
+  createNewWalkerConnection(walkerId, requestingChannel) {
+    var _this2 = this;
+
+    return _asyncToGenerator(function* () {
+      console.log('Start creating new PeerConnection for walker');
+      const con = new window.RTCPeerConnection(_config2.default.iceConfig);
+      try {
+        const dataChannel = con.createDataChannel('data-channel');
         // Setup handlers for the locally created channel
-        dataChannelReady.onmessage = function (message) {
-          // console.log('onMessage called')
-          _this.handleChannelMessage(message, dataChannelReady);
+        dataChannel.onmessage = function (message) {
+          _this2.handleMessage(message.data, dataChannel);
         };
 
-        dataChannelReady.onopen = function (event) {
+        dataChannel.onopen = function (event) {
           console.log('Connection opened to walker with id ' + walkerId);
-          _this._walkerConnections[[walkerId]] = {
+          _this2._walkerConnections[[walkerId]] = {
             connection: con,
-            channel: dataChannelReady
+            channel: dataChannel
           };
-          delete _this._connectionsAwaitingAnswer[[walkerId]];
+          delete _this2._connectionsAwaitingAnswer[[walkerId]];
         };
 
         // Create the offer for a p2p connection
         const offer = yield con.createOffer();
         yield con.setLocalDescription(offer);
-        con.onicecandidate = function (candidate) {
-          console.log('Got candidate event');
-          if (candidate.candidate == null) {
-            const jsonOffer = JSON.stringify({
-              walkerId,
-              type: 'offer-for-walker',
-              payload: con.localDescription,
-              uuid: _this._uuid
-            });
-            _this._connectionsAwaitingAnswer[[walkerId]] = {
-              connection: con,
-              offer: jsonOffer,
-              channel: dataChannelReady
-            };
-            console.log('Offer created, sending');
-            requestingChannel.send(jsonOffer);
+        const jsonOffer = JSON.stringify({
+          walkerId,
+          type: 'offer-for-walker',
+          payload: con.localDescription,
+          uuid: _this2._uuid
+        });
+        _this2._connectionsAwaitingAnswer[[walkerId]] = {
+          connection: con,
+          offer: jsonOffer,
+          channel: dataChannel
+        };
+        requestingChannel.send(jsonOffer);
+        con.onicecandidate = function (event) {
+          if (event.candidate == null) {
+            // TODO: send end of candidate event
+          } else {
+            if (event.candidate) {
+              const jsonOffer = JSON.stringify({
+                walkerId,
+                type: 'ice-candidate-for-walker',
+                payload: event.candidate,
+                uuid: _this2._uuid
+              });
+              requestingChannel.send(jsonOffer);
+            }
           }
         };
       } catch (err) {
@@ -2874,133 +2885,117 @@ class Peer {
     })();
   }
 
-  connectWalker(sdp, walkerId) {
-    console.log('connect walkerId: ' + walkerId);
-    console.log('with sdp: ' + JSON.stringify(sdp));
-    console.log(this._connectionsAwaitingAnswer[[walkerId]]);
-    this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(sdp);
+  addIceCandidateForWalkerConnection(candidate, walkerId) {
+    this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate);
   }
 
-  createOffer() {
-    var _this2 = this;
-
-    return _asyncToGenerator(function* () {
-      try {
-        // Create data channel
-        const dataChannel = _this2._initializedCon.createDataChannel('data-channel');
-        dataChannel.onmessage = function (message) {
-          _this2.handleChannelMessage(message, dataChannel);
-        };
-        dataChannel.onopen = function () {
-          console.log('Ready for walker');
-        };
-        _this2._initializedChannel = dataChannel;
-
-        // Create the offer for a P2P connection
-        const offer = yield _this2._initializedCon.createOffer();
-        yield _this2._initializedCon.setLocalDescription(offer);
-        _this2._initializedCon.onicecandidate = function (candidate) {
-          if (candidate.candidate == null) {
-            console.log('Sending joining msg');
-            console.log('My id is: ' + _this2._uuid + ' from ' + _config2.default.uuid);
-            const msg = JSON.stringify({
-              type: 'joining',
-              payload: _this2._initializedCon.localDescription,
-              uuid: _this2._uuid,
-              containerUuid: _config2.default.uuid
-            });
-            _this2._socket.send(msg);
-          }
-        };
-      } catch (err) {
-        console.log(err);
-      }
-    })();
+  connectToWalker(answer, walkerId) {
+    this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer);
   }
 
-  consume(type, sdp, inputUuid) {
+  handleAnswerFromLastPeer(answer) {
     var _this3 = this;
 
     return _asyncToGenerator(function* () {
-      console.log('Consuming ' + type);
-      try {
-        if (type === 'offer') {
-          const offer = new RTCSessionDescription(sdp);
-          yield _this3._recievedCon.setRemoteDescription(offer);
-          const answer = yield _this3._recievedCon.createAnswer();
-          _this3._recievedCon.setLocalDescription(answer);
-          _this3._recievedCon.onicecandidate = function (candidate) {
-            if (candidate.candidate == null) {
-              _this3._socket.send(JSON.stringify({
-                type: 'answer',
-                payload: _this3._recievedCon.localDescription,
-                toUuid: inputUuid,
-                uuid: _this3._uuid,
-                containerUuid: _config2.default.uuid
-              }));
-            }
-          };
-        } else if (type === 'answer') {
-          const answer = new RTCSessionDescription(sdp);
-          _this3._initializedCon.setRemoteDescription(answer);
-          // console.log('initilizedCon has been set.')
-        }
-      } catch (err) {
-        console.log(err);
-      }
+      _this3._entryCon.setRemoteDescription(new window.RTCSessionDescription(answer));
     })();
   }
 
-  handleChannelMessage(channelMessage, channel) {
-    // console.log('handling: ', channelMessage)
-    const channelMessageData = channelMessage.data;
-    var message = JSON.parse(channelMessageData);
+  sendAnswerToJoiningPeer(message) {
+    var _this4 = this;
+
+    return _asyncToGenerator(function* () {
+      const offer = new window.RTCSessionDescription(message.payload);
+      console.log(JSON.stringify(message.payload));
+      yield _this4._extensionCon.setRemoteDescription(offer);
+      _this4._extensionCon.onicecandidate = function (event) {
+        if (event.candidate == null) {
+          var answer = JSON.stringify({
+            type: 'answer-for-joining',
+            payload: _this4._extensionCon.localDescription,
+            joinerId: message.joinerId
+          });
+          _this4.signalingChannel.send(answer);
+        }
+      };
+      _this4._extensionCon.ondatachannel = function (evt) {
+        console.log('Connected to next peer');
+        const channel = evt.channel;
+        _this4._extensionChannel = channel;
+        channel.onmessage = function (message) {
+          _this4.handleMessage(message.data, channel);
+        };
+      };
+
+      const answer = yield _this4._extensionCon.createAnswer();
+      _this4._extensionCon.setLocalDescription(answer);
+    })();
+  }
+
+  handleMessage(channelMessage, channel) {
+    // const channelMessageData = channelMessage.data
+
+    var message = JSON.parse(channelMessage);
+    // console.log(message)
+    // console.log('***************')
+    // console.log('Type: ' + typeof JSON.parse(message))
+    // console.log(JSON.parse(message))
+    // console.log('***************')
+    // console.log('Type: ' + message.type)
+    // console.log('message: ' + JSON.stringify(message))
     switch (message.type) {
-      // case 'walker-request-offer':
-      //   console.log('waiting')
-      //   this._waitingOffer = JSON.stringify(message.payload)
-      //   break
-      case 'walker-to-middle':
-        // console.log('sending middle-to-next')
-        this._initializedChannel.send(JSON.stringify({
-          type: 'middle-to-next',
+      case 'answer-from-walker-relay':
+        this._extensionChannel.send(JSON.stringify({
+          type: 'answer-from-walker-destination',
           data: message.payload,
           walkerId: message.walkerId
         }));
         break;
-      case 'middle-to-next':
-        console.log('Recived answer from walker');
-        var answer = new RTCSessionDescription(message.data);
-        this.connectWalker(answer, message.walkerId);
-        // console.log('middleToNext')
+      case 'answer-from-walker-destination':
+        var answer = new window.RTCSessionDescription(message.data);
+        this.connectToWalker(answer, message.walkerId);
         break;
       case 'get-offer-from-next-peer':
-        // console.log('sending: request-offer-for-walker')
-        this._initializedChannel.send(JSON.stringify({
+        this._extensionChannel.send(JSON.stringify({
           type: 'request-offer-for-walker',
           walkerId: message.walkerId
         }));
-        // channel.send(this._waitingOffer)
-        break;
-      case 'chat':
-        console.log(`FROM (${message.uuid}): ${message.payload}`);
         break;
       case 'request-offer-for-walker':
-        // console.log('Current Channel: ', channel)
-        console.log('Creating new walker connection');
         this.createNewWalkerConnection(message.walkerId, channel);
         break;
       case 'offer-for-walker':
-        // console.log('sending offer to walker')
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
+        break;
+      case 'ice-candidate-for-walker':
+        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload));
+        break;
+      case 'ice-candidate-for-peer-relay':
+        this._extensionChannel.send(JSON.stringify({
+          type: 'ice-candidate-for-peer',
+          payload: message.payload,
+          walkerId: message.uuid
+        }));
+        break;
+      case 'ice-candidate-for-peer':
+        var candidate = new window.RTCIceCandidate(message.payload);
+        this.addIceCandidateForWalkerConnection(candidate, message.walkerId);
+        break;
+      case 'joining':
+        this.sendAnswerToJoiningPeer(message);
+        break;
+      case 'answer-for-joining':
+        this.handleAnswerFromLastPeer(message.payload);
         break;
       default:
         console.log(`No case for type: ${message.type}`);
+        console.log('Message: ' + JSON.stringify(message));
     }
   }
 }
 
 const newPeer = new Peer();
+console.log('My ID is: ' + newPeer._uuid);
 },{"./config":1,"uuid":3}],3:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
