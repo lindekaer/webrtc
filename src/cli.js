@@ -206,6 +206,7 @@ function addIpToKnownHosts (ip) {
 }
 
 function provisionDroplet (ip) {
+  console.log('Running build script')
   const command = `
     apt-get install git -y;
     cd /;
@@ -213,6 +214,8 @@ function provisionDroplet (ip) {
     cd /webrtc;
     git checkout jit-docker;
     ls -l;
+    chmod 777 ./build.sh;
+    ./build.sh;
   `
   return new Promise((resolve, reject) => {
     exec(command, `root@${ip}`, (err, stdout, stderr) => {
