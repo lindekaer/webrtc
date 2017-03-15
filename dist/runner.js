@@ -161,7 +161,7 @@ function startWalker(cb) {
           if (duration > timeMax) timeMax = duration;
 
           durations.push(duration);
-          _fs2.default.writeFile(_path2.default.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), JSON.stringify(durations, null, 2), () => {});
+          _fs2.default.writeFile(_path2.default.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {});
 
           timeTotal += duration;
 
