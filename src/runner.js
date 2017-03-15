@@ -46,6 +46,7 @@ if (MODE === 'full') {
 if (MODE === 'spawn') {
   async.series([
     createDockerImage,
+    createBootPeer,
     (cb) => { sleep(5000, cb) },
     (cb) => { runContainer(0, 'peer', cb) },
     (cb) => { sleep(TIMEOUT, cb) }
@@ -165,6 +166,9 @@ function startWalker (cb) {
           console.log(`Variance:                       ${colors.green.bold.underline(`${variance.toFixed(2)}`)}`)
           console.log(`Standard deviation:             ${colors.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`)
           console.log('')
+
+          console.log('DATA:')
+          console.log(JSON.stringify(durations, null, 2))
 
           child.kill()
           cb()

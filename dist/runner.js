@@ -63,7 +63,7 @@ if (MODE === 'full') {
 }
 
 if (MODE === 'spawn') {
-  _async2.default.series([createDockerImage, cb => {
+  _async2.default.series([createDockerImage, createBootPeer, cb => {
     sleep(5000, cb);
   }, cb => {
     runContainer(0, 'peer', cb);
@@ -181,6 +181,9 @@ function startWalker(cb) {
           console.log(`Variance:                       ${_colors2.default.green.bold.underline(`${variance.toFixed(2)}`)}`);
           console.log(`Standard deviation:             ${_colors2.default.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`);
           console.log('');
+
+          console.log('DATA:');
+          console.log(JSON.stringify(durations, null, 2));
 
           child.kill();
           cb();
