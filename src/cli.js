@@ -75,7 +75,7 @@ async function createDropletSequence () {
     console.log(colors.yellow.bold('Provisioning droplet...'))
     await sleep(30000)
     await addIpToKnownHosts(ip)
-    await provisionDroplet(ip)
+    // await provisionDroplet(ip)
     console.log('')
   } catch (err) {
     console.log(err)
@@ -197,10 +197,10 @@ function addIpToKnownHosts (ip) {
           localExec(`echo "${line}" >> ~/.ssh/known_hosts`, (err, stdout, stderr) => {
             if (err) reject(err)
             console.log('Added RSA fingerprint to known hosts')
+            resolve()
           })
         }
       }
-      resolve()
     })
   })
 }
@@ -213,7 +213,6 @@ function provisionDroplet (ip) {
     git clone https://lindekaer:lextalioniS10@github.com/lindekaer/webrtc.git;
     cd /webrtc;
     git checkout jit-docker;
-    ls -l;
     chmod 777 ./build.sh;
     ./build.sh;
   `

@@ -30,6 +30,7 @@ const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketser
 const TIMEOUT = args['timeout'] || ms('5m')
 const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${uuid.v1()}`
+const NUMBER_OF_CONNECTIONS = args['number-of-connections']
 
 if (MODE === 'full') {
   async.series([
@@ -45,6 +46,7 @@ if (MODE === 'full') {
 if (MODE === 'spawn') {
   async.series([
     createDockerImage,
+    createBootPeer,
     (cb) => { sleep(5000, cb) },
     (cb) => { runContainer(0, 'peer', cb) },
     (cb) => { sleep(TIMEOUT, cb) }
@@ -120,6 +122,14 @@ function startWalker (cb) {
         line = line.split(' - ')
         let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length))
 
+        console.log('------------')
+        console.log('TIMESTAMP')
+        console.log(timestamp)
+        console.log('PREV')
+        console.log(prevTime)
+        console.log('------------')
+
+
         if (prevTime) {
           duration = timestamp - prevTime
 
@@ -141,7 +151,7 @@ function startWalker (cb) {
 
         prevTime = timestamp
 
-        if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
+        if (durations.length === (NUMBER_OF_CONNECTIONS || (NUM_PEERS * NUM_CONTAINERS))) {
           const mean = calculateMean(timeTotal, numConnections)
           const variance = calculateVariance(durations, mean)
           const standardDeviation = calculateStandardDeviation(variance)
@@ -156,6 +166,9 @@ function startWalker (cb) {
           console.log(`Variance:                       ${colors.green.bold.underline(`${variance.toFixed(2)}`)}`)
           console.log(`Standard deviation:             ${colors.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`)
           console.log('')
+
+          console.log('DATA:')
+          console.log(JSON.stringify(durations, null, 2))
 
           child.kill()
           cb()
