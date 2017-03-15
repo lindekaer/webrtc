@@ -41,7 +41,7 @@ class WalkerPeer {
   }
 
   onSocketMessage (message) {
-    console.log('Got message from socket: ' + message.data)
+    // console.log('Got message from socket: ' + message.data)
     this.consume(message.data)
   }
 
@@ -57,7 +57,7 @@ class WalkerPeer {
   }
 
   async consume (rawMessage) {
-    console.log('Consuming')
+    // console.log('Consuming')
     try {
       const message = JSON.parse(rawMessage)
       const offer = new RTCSessionDescription(message)
@@ -73,7 +73,7 @@ class WalkerPeer {
             walkerId: this._uuid
           })
           this._socket.send(answer)
-          console.log('Sending answer back: ' + answer)
+          // console.log('Sending answer back: ' + answer)
         }
       }
     } catch (err) {
@@ -106,7 +106,7 @@ class WalkerPeer {
               walkerId: this._uuid
             })
             // console.log('Sending answer to node ' + this._nodeCount)
-            console.log('Sending answer back: ' + answer)
+            // console.log('Sending answer back: ' + answer)
             channel.send(answer)
           }
         }
