@@ -141,7 +141,7 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
-          fs.writeFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), () => {})
+          fs.writeFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), JSON.stringify(durations, null, 2), () => {})
 
           timeTotal += duration
 
