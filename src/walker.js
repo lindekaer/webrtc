@@ -76,7 +76,7 @@ class WalkerPeer {
               channel.send(jsonOffer)
             }
           }
-        } 
+        }
         peerConnection.createAnswer((answer) => {
           peerConnection.setLocalDescription(answer)
           channel.send(JSON.stringify({
@@ -87,7 +87,7 @@ class WalkerPeer {
         }, errorHandler)
       }, errorHandler)
     } else {
-      console.log(JSON.stringify(message))
+      // console.log(JSON.stringify(message))
       peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
     }
   }

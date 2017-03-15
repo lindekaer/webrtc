@@ -117,7 +117,8 @@ class Peer {
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this._entryCon.localDescription,
-              joinerId: _this._uuid
+              joinerId: _this._uuid,
+              containerUuid: _config2.default.uuid
             });
             _this.signalingChannel.send(msg);
           }
@@ -234,8 +235,16 @@ class Peer {
   }
 
   handleMessage(channelMessage, channel) {
-    const channelMessageData = channelMessage.data;
+    // const channelMessageData = channelMessage.data
+
     var message = JSON.parse(channelMessage);
+    // console.log(message)
+    // console.log('***************')
+    // console.log('Type: ' + typeof JSON.parse(message))
+    // console.log(JSON.parse(message))
+    // console.log('***************')
+    // console.log('Type: ' + message.type)
+    // console.log('message: ' + JSON.stringify(message))
     switch (message.type) {
       case 'answer-from-walker-relay':
         this._extensionChannel.send(JSON.stringify({
@@ -282,6 +291,7 @@ class Peer {
         break;
       default:
         console.log(`No case for type: ${message.type}`);
+        console.log('Message: ' + JSON.stringify(message));
     }
   }
 }

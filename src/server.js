@@ -22,6 +22,8 @@ var lastPeer
 var firstPeer
 var connectedCount = 0
 var walker
+var waiting = []
+var connectedToChainCount = 0
 
 wss.on('connection', (ws) => {
   connectedCount++
@@ -74,13 +76,64 @@ function onClose () {
 
 const joining = (msg, socket) => {
   peers[msg.joinerId] = socket
+  console.log('Total peers: ' + Object.keys(peers).length)
   if (!lastPeer) {
+    console.log('Setting first peer')
     firstPeer = socket
-    lastPeer = socket
+    lastPeer = {
+      socket: socket,
+      containerUuid: msg.containerUuid
+    }
+    connectedToChainCount++
     return
   }
-  lastPeer.send(JSON.stringify(msg))
-  lastPeer = socket
+  if (msg.containerUuid === lastPeer.containerUuid) {
+    // console.log('Setting peer to wait from: ' + msg.containerUuid)
+    waiting.push(msg)
+    console.log('Waiting peers: ' + waiting.length)
+  } else {
+    sendJoinMessageToLastPeer(msg, socket)
+    // lastPeer.socket.send(JSON.stringify(msg))
+    // lastPeer = {
+    //   socket: socket,
+    //   containerUuid: msg.containerUuid
+    // }
+    // console.log('Checking waiting...')
+    var morePotentialWaiting = true
+    while (morePotentialWaiting) {
+      var somethingFound = false
+      for (var i = 0; i < waiting.length; i++) {
+        const waitingPeer = waiting[i]
+        if (waitingPeer.containerUuid !== lastPeer.containerUuid) {
+          // console.log('Found one! connecting to peer from: ' + waitingPeer.containerUuid)// + ' with id: ' + waitingPeer.joinerId)
+          waiting.splice(i, 1)
+          sendJoinMessageToLastPeer(waitingPeer, peers[waitingPeer.joinerId])
+          // lastPeer.socket.send(JSON.stringify(waitingPeer))
+          // lastPeer = {
+          //   socket:,
+          //   containerUuid: msg.containerUuid
+          // }
+          somethingFound = true
+          break
+        }
+      }
+      morePotentialWaiting = somethingFound
+    }
+    // console.log('Done checking')
+  }
+}
+
+const sendJoinMessageToLastPeer = (msg, fromSocket) => {
+  console.log('-----------------------------------------------')
+  console.log('Setting lastPeer to: ' + msg.containerUuid)
+  connectedToChainCount++
+  console.log('Peers in chain: ' + connectedToChainCount)
+  console.log('Waiting peers: ' + waiting.length)
+  lastPeer.socket.send(JSON.stringify(msg))
+  lastPeer = {
+    socket: fromSocket,
+    containerUuid: msg.containerUuid
+  }
 }
 
 const answerForJoining = (msg) => {

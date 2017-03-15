@@ -96,7 +96,7 @@ class WalkerPeer {
         }, errorHandler);
       }, errorHandler);
     } else {
-      console.log(JSON.stringify(message));
+      // console.log(JSON.stringify(message))
       peerConnection.addIceCandidate(new window.RTCIceCandidate(message));
     }
   }

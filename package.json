@@ -14,7 +14,7 @@
     "spawn": "node dist/runner.js --num-containers 3 --num-peers 10 --mode spawn",
     "walker": "node dist/runner.js --num-containers 3 --num-peers 10 --mode walker --signaling-url ws://192.168.1.144:8080/socketserver --timeout 25000",
     "full": "node dist/runner.js --num-containers 3 --num-peers 10 --mode full --signaling-url ws://192.168.1.144:8080/socketserver --timeout 25000",
-    "pushit": "git add .; git commit -m 'Bacon'; git push"
+    "bacon": "git add .; git commit -m 'Bacon'; git push"
   },
   "babel": {
     "presets": [
