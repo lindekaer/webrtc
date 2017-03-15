@@ -56,7 +56,6 @@ const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketser
 const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
 const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
-const NUMBER_OF_CONNECTIONS = args['number-of-connections'];
 const ID = args['id'];
 
 if (MODE === 'full') {
@@ -174,7 +173,7 @@ function startWalker(cb) {
 
         prevTime = timestamp;
 
-        if (durations.length === (NUMBER_OF_CONNECTIONS || NUM_PEERS * NUM_CONTAINERS)) {
+        if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
           const mean = calculateMean(timeTotal, numConnections);
           const variance = calculateVariance(durations, mean);
           const standardDeviation = calculateStandardDeviation(variance);
