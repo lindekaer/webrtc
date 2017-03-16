@@ -127,11 +127,13 @@ class WalkerPeer {
     } else {
       // console.log(JSON.stringify(message))
       if (this.isHostIceCandidate(message.candidate)) {
-        var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[0])
-        // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
-        console.log('Candidate: ' + JSON.stringify(candidate))
-        console.log('Adding DICE now')
-        peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
+        for (var i = 0; i < this.iceIds.length; i++) {
+          var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[i])
+          // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
+          console.log('Candidate: ' + JSON.stringify(candidate))
+          console.log('Adding DICE now')
+          peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
+        }
       }
       // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
     }

@@ -173,6 +173,7 @@ class Peer {
             // TODO: send end of candidate event
           } else {
             if (event.candidate) {
+              console.log('Walker candidate: ' + JSON.stringify(event.candidate));
               const jsonOffer = JSON.stringify({
                 walkerId,
                 type: 'ice-candidate-for-walker',
