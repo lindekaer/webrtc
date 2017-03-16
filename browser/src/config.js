@@ -24,7 +24,7 @@ export default {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://192.168.1.242:9000/socketserver', //'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://188.226.135.47:8080/socketserver', //'ws://192.168.1.242:8080/socketserver', //'ws://localhost:9000/socketserver',
   uuid: Math.random() > 0.5 ? 'meep' : 'beans',
   useTrickleIce: true
 }
