@@ -19,7 +19,7 @@ function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, a
                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
 /*
  This version contains the Artificially Constructed ICE Candidates,
- the connection times as fast as sending the localhost candidate. 
+ the connection times as fast as sending the localhost candidate.
  This eleminates the longer time of gathering candidates.
 */
 
@@ -119,7 +119,8 @@ class Peer {
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this._entryCon.localDescription,
-              joinerId: _this._uuid
+              joinerId: _this._uuid,
+              containerUuid: _config2.default.uuid
             });
             _this.signalingChannel.send(msg);
           }
@@ -289,7 +290,7 @@ class Peer {
         this.handleAnswerFromLastPeer(message.payload);
         break;
       default:
-        console.log(`No case for type: ${ message.type }`);
+        console.log(`No case for type: ${message.type}`);
     }
   }
 

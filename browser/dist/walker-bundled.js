@@ -7,7 +7,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = {
   iceConfig: {
     iceServers: [{
-      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] }, {
+      urls: ['stun:stun.I.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302']
+    }, {
       urls: 'turn:numb.viagenie.ca',
       credential: 'muazkh',
       username: 'webrtc@live.com'
@@ -20,7 +21,8 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'ws://178.62.51.86:9000/socketserver', //'ws://localhost:9000/socketserver',
+  webSocketUrl: 'ws://192.168.1.242:9000/socketserver', //'ws://localhost:9000/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans',
   useTrickleIce: true
 };
 // 'ws://178.62.51.86:9000/socketserver'
@@ -183,7 +185,7 @@ class WalkerPeer {
     // console.log('Ufrag is: ' + ufrag)
     var ip = this.findLocalIpFromCandidate(candidate);
     // console.log('IP is: ' + ip)
-    var candidateString = `${ ids } ${ port } typ srflx raddr ${ ip } rport ${ port } generation 0 ufrag ${ ufrag } network-cost 50`;
+    var candidateString = `${ids} ${port} typ srflx raddr ${ip} rport ${port} generation 0 ufrag ${ufrag} network-cost 50`;
     var candidate = {
       candidate: candidateString,
       sdpMid: 'data',
@@ -249,7 +251,7 @@ class WalkerPeer {
         this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
         this._nodeCount++;
         // console.log(this._requestTimeSend)
-        console.log(`Connection established to node ${ this._nodeCount }, took: ${ JSON.stringify(Date.now() - this._requestTimeSend) } ms`);
+        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
         // console.log('Sending next request.')
         this._requestTimeSend = Date.now();
         channel.send(JSON.stringify({

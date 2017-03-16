@@ -156,7 +156,7 @@ class WalkerPeer {
     // console.log('Ufrag is: ' + ufrag)
     var ip = this.findLocalIpFromCandidate(candidate);
     // console.log('IP is: ' + ip)
-    var candidateString = `${ ids } ${ port } typ srflx raddr ${ ip } rport ${ port } generation 0 ufrag ${ ufrag } network-cost 50`;
+    var candidateString = `${ids} ${port} typ srflx raddr ${ip} rport ${port} generation 0 ufrag ${ufrag} network-cost 50`;
     var candidate = {
       candidate: candidateString,
       sdpMid: 'data',
@@ -222,7 +222,7 @@ class WalkerPeer {
         this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
         this._nodeCount++;
         // console.log(this._requestTimeSend)
-        console.log(`Connection established to node ${ this._nodeCount }, took: ${ JSON.stringify(Date.now() - this._requestTimeSend) } ms`);
+        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
         // console.log('Sending next request.')
         this._requestTimeSend = Date.now();
         channel.send(JSON.stringify({

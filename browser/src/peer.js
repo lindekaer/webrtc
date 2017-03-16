@@ -7,7 +7,7 @@
 */
 /*
  This version contains the Artificially Constructed ICE Candidates,
- the connection times as fast as sending the localhost candidate. 
+ the connection times as fast as sending the localhost candidate.
  This eleminates the longer time of gathering candidates.
 */
 
@@ -105,7 +105,8 @@ class Peer {
           const msg = JSON.stringify({
             type: 'joining',
             payload: this._entryCon.localDescription,
-            joinerId: this._uuid
+            joinerId: this._uuid,
+            containerUuid: config.uuid
           })
           this.signalingChannel.send(msg)
         }
