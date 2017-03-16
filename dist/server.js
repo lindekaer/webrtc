@@ -9,7 +9,7 @@
 */
 
 var WebSocketServer = require('uws').Server;
-var wss = new WebSocketServer({ port: 8080 });
+var wss = new WebSocketServer({ port: 9000 });
 
 /*
 -----------------------------------------------------------------------------------
@@ -19,11 +19,12 @@ var wss = new WebSocketServer({ port: 8080 });
 -----------------------------------------------------------------------------------
 */
 
-var peers = {};
+const peers = {};
 var lastPeer;
 var firstPeer;
 var connectedCount = 0;
 var walker;
+var iceIdsForNextPeer = [];
 var waiting = [];
 var connectedToChainCount = 0;
 
@@ -68,24 +69,17 @@ function onMessage(message) {
 function onClose() {
   connectedCount--;
   console.log(`Closed! ${connectedCount} connected.`);
-  if (connectedCount === 0) {
-    firstPeer = undefined;
-    lastPeer = undefined;
-    walker = undefined;
-    peers = {};
-  }
 }
 
 const joining = (msg, socket) => {
   peers[msg.joinerId] = socket;
-  console.log('Total peers: ' + Object.keys(peers).length);
   if (!lastPeer) {
-    console.log('Setting first peer');
     firstPeer = socket;
     lastPeer = {
       socket: socket,
       containerUuid: msg.containerUuid
     };
+    iceIdsForNextPeer = getIdStringsFromOffer(JSON.stringify(msg.payload.sdp));
     connectedToChainCount++;
     return;
   }
@@ -95,12 +89,6 @@ const joining = (msg, socket) => {
     console.log('Waiting peers: ' + waiting.length);
   } else {
     sendJoinMessageToLastPeer(msg, socket);
-    // lastPeer.socket.send(JSON.stringify(msg))
-    // lastPeer = {
-    //   socket: socket,
-    //   containerUuid: msg.containerUuid
-    // }
-    // console.log('Checking waiting...')
     var morePotentialWaiting = true;
     while (morePotentialWaiting) {
       var somethingFound = false;
@@ -110,11 +98,6 @@ const joining = (msg, socket) => {
           // console.log('Found one! connecting to peer from: ' + waitingPeer.containerUuid)// + ' with id: ' + waitingPeer.joinerId)
           waiting.splice(i, 1);
           sendJoinMessageToLastPeer(waitingPeer, peers[waitingPeer.joinerId]);
-          // lastPeer.socket.send(JSON.stringify(waitingPeer))
-          // lastPeer = {
-          //   socket:,
-          //   containerUuid: msg.containerUuid
-          // }
           somethingFound = true;
           break;
         }
@@ -123,6 +106,8 @@ const joining = (msg, socket) => {
     }
     // console.log('Done checking')
   }
+  // lastPeer.send(JSON.stringify(msg))
+  // lastPeer = socket
 };
 
 const sendJoinMessageToLastPeer = (msg, fromSocket) => {
@@ -154,7 +139,10 @@ const walkerRequest = (msg, socket) => {
 };
 
 const offerForWalker = msg => {
-  walker.send(JSON.stringify(msg.payload));
+  walker.send(JSON.stringify({
+    payload: msg.payload,
+    iceIds: iceIdsForNextPeer
+  }));
 };
 
 const answerFromWalkerRelay = msg => {
@@ -175,4 +163,20 @@ const iceCandidateForPeer = msg => {
     payload: msg.payload,
     walkerId: msg.uuid
   }));
+};
+
+const getIdStringsFromOffer = offer => {
+  var startIndex = 0,
+      index,
+      strings = [];
+  while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
+    var localIndex = index;
+    for (var i = 0; i < 5; i++) {
+      localIndex = offer.indexOf(' ', localIndex + 1);
+    }
+    var substring = offer.substring(index, localIndex);
+    strings.push(substring);
+    startIndex = index + 'candidate:'.length;
+  }
+  return strings;
 };

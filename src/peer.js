@@ -6,8 +6,9 @@
 -----------------------------------------------------------------------------------
 */
 /*
- This version is the beautified version with full trickle implemented and
- the ability to togle between using trickle ice and not using it.
+ This version contains the Artificially Constructed ICE Candidates,
+ the connection times as fast as sending the localhost candidate.
+ This eleminates the longer time of gathering candidates.
 */
 
 /*
@@ -43,6 +44,7 @@ class Peer {
     this._uuid = uuid.v1()
     this._connectionsAwaitingAnswer = {}
     this._walkerConnections = {}
+    this.iceIdsForNextPeer = []
     this.connectToServer()
   }
 
@@ -169,10 +171,12 @@ class Peer {
   }
 
   addIceCandidateForWalkerConnection (candidate, walkerId) {
+    console.log('Candidate: ' + JSON.stringify(candidate))
     this._connectionsAwaitingAnswer[[walkerId]].connection.addIceCandidate(candidate)
   }
 
   connectToWalker (answer, walkerId) {
+    console.log('Answer from walker: ' + JSON.stringify(answer))
     this._connectionsAwaitingAnswer[[walkerId]].connection.setRemoteDescription(answer)
   }
 
@@ -182,7 +186,8 @@ class Peer {
 
   async sendAnswerToJoiningPeer(message) {
     const offer = new window.RTCSessionDescription(message.payload)
-    console.log(JSON.stringify(message.payload))
+    console.log(JSON.stringify(message.payload.sdp))
+    this.iceIdsForNextPeer = this.getIdStringsFromOffer(JSON.stringify(message.payload.sdp))
     await this._extensionCon.setRemoteDescription(offer)
     this._extensionCon.onicecandidate = (event) => {
       if (event.candidate == null) {
@@ -208,16 +213,8 @@ class Peer {
   }
 
   handleMessage (channelMessage, channel) {
-    // const channelMessageData = channelMessage.data
-
+    const channelMessageData = channelMessage.data
     var message = JSON.parse(channelMessage)
-    // console.log(message)
-    // console.log('***************')
-    // console.log('Type: ' + typeof JSON.parse(message))
-    // console.log(JSON.parse(message))
-    // console.log('***************')
-    // console.log('Type: ' + message.type)
-    // console.log('message: ' + JSON.stringify(message))
     switch (message.type) {
       case 'answer-from-walker-relay':
         this._extensionChannel.send(JSON.stringify({
@@ -240,7 +237,10 @@ class Peer {
         this.createNewWalkerConnection(message.walkerId, channel)
         break
       case 'offer-for-walker':
-        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload))
+        this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify({
+          payload: message.payload,
+          iceIds: this.iceIdsForNextPeer
+        }))
         break
       case 'ice-candidate-for-walker':
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload))
@@ -262,11 +262,25 @@ class Peer {
       case 'answer-for-joining':
         this.handleAnswerFromLastPeer(message.payload)
         break
-      default:
-        console.log(`No case for type: ${message.type}`)
-        console.log('Message: ' + JSON.stringify(message))
+      default: console.log(`No case for type: ${message.type}`)
     }
   }
+
+  getIdStringsFromOffer (offer) {
+    var startIndex = 0, index, strings = [];
+    while ((index = offer.indexOf('candidate:', startIndex)) > -1) {
+      var localIndex = index
+      for (var i = 0; i < 5; i++) {
+        localIndex = offer.indexOf(' ', localIndex+1)
+      }
+      var substring = offer.substring(index, localIndex)
+      console.log('Found string: ' + substring)
+      strings.push(substring);
+      startIndex = index + 'candidate:'.length;
+    }
+    return strings
+  }
+
 }
 
 const newPeer = new Peer()
