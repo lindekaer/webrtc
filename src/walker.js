@@ -28,6 +28,7 @@ class WalkerPeer {
   constructor () {
     this._uuid = uuid.v1()
     this.connectToServer()
+    this._requestTimeSend = Date.now()
   }
 
   connectToServer () {
@@ -54,6 +55,7 @@ class WalkerPeer {
       uuid: this._uuid
     })
     this._socket.send(msg)
+    this._requestTimeSend = Date.now()
   }
 
   async consume (rawMessage) {
@@ -114,7 +116,8 @@ class WalkerPeer {
 
       channel.onopen = (evt) => {
         this._nodeCount++
-        Log('Connection established to node ' + this._nodeCount)
+        // Log('Connection established to node ' + this._nodeCount)
+        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`)
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
