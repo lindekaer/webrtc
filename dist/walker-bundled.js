@@ -19,7 +19,7 @@ exports.default = {
   },
   // webSocketUrl: 'SIGNALING_URL',
   uuid: 'SIGNALING_UUID',
-  webSocketUrl: 'ws://188.226.135.47:8080/socketserver'
+  webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
   // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
   // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
@@ -36,16 +36,18 @@ var _config2 = _interopRequireDefault(_config);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/*
------------------------------------------------------------------------------------
-|
-| Imports
-|
------------------------------------------------------------------------------------
-*/
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; } /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           -----------------------------------------------------------------------------------
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Imports
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           -----------------------------------------------------------------------------------
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           */
 
 // import webrtc from 'wrtc'
 // import WebSocket from 'uws'
+
+
 const Log = console.log;
 console.log = msg => {
   const data = Date.now() + ' - ' + msg;
@@ -71,108 +73,180 @@ class WalkerPeer {
   }
 
   connectToServer() {
-    this._socket = new window.WebSocket(_config2.default.webSocketUrl);
-    this._socket.onopen = this.onSocketOpen.bind(this);
-    this._socket.onmessage = this.onSocketMessage.bind(this);
+    this._signalingChannel = new window.WebSocket(_config2.default.webSocketUrl);
+    this._signalingChannel.onopen = this.onSocketOpen.bind(this);
+    this._signalingChannel.onmessage = this.onSocketMessage.bind(this);
   }
 
   onSocketOpen() {
-    this.init();
+    this._firstPeerCon = new window.RTCPeerConnection(_config2.default.iceConfig);
+    this._firstPeerCannel;
+    this._lastPeerCon = new window.RTCPeerConnection(_config2.default.iceConfig);
+    this._lastPeerChannel;
+    this._nodeCount = 0;
+    this._requestTimeSend = Date.now();
+    this.joinNetwork();
   }
 
   onSocketMessage(rawMessage) {
     const message = JSON.parse(rawMessage.data);
-    this.handleMessage(message, this._currentCon, this._socket);
+    this.handleMessage(message, this._currentCon, this._signalingChannel);
   }
 
-  init() {
-    this._currentCon = new window.RTCPeerConnection(_config2.default.iceConfig);
-    this._nextCon;
-    this._nodeCount = 0;
-    const msg = JSON.stringify({
-      type: 'walker-request',
-      uuid: this._uuid
-    });
-    this._requestTimeSend = Date.now();
-    this._socket.send(msg);
+  // Connect to to the first peer through the signaling server
+  joinNetwork() {
+    var _this = this;
+
+    return _asyncToGenerator(function* () {
+      try {
+        // Create data channel
+        const dataChannel = _this._firstPeerCon.createDataChannel('First-Peer-Data-Channel');
+        dataChannel.onmessage = function (message) {
+          _this.handleMessage(JSON.parse(message.data), dataChannel);
+        };
+        _this._firstPeerChannel = dataChannel;
+        dataChannel.onopen = function () {
+          console.log('Joined network!');
+          _this.connectToLastPeer(dataChannel);
+          // TODO: Initiate request
+        };
+
+        const offer = yield _this._firstPeerCon.createOffer();
+        yield _this._firstPeerCon.setLocalDescription(offer);
+        _this._firstPeerCon.onicecandidate = function (event) {
+          if (event.candidate !== null) {
+            console.log('Candidate found');
+            const msg = JSON.stringify({
+              type: 'ice-candidate-for-peer-relay',
+              payload: event.candidate,
+              walkerId: _this._uuid
+            });
+            _this._signalingChannel.send(msg);
+          }
+        };
+        const msg = JSON.stringify({
+          type: 'walker-joining-offer',
+          payload: _this._firstPeerCon.localDescription,
+          walkerId: _this._uuid
+        });
+        _this._signalingChannel.send(msg);
+      } catch (err) {
+        console.log(err);
+      }
+    })();
   }
 
-  handleMessage(message, peerConnection, channel) {
-    // console.log('message: ' + JSON.stringify(message))
-    if (message.iceIds) {
-      console.log('Got offer');
-      console.log(JSON.stringify(message));
-      console.log('Got ids too: ' + JSON.stringify(message.iceIds[0]));
-      this.iceIds = message.iceIds;
-      const offer = new window.RTCSessionDescription(message.payload);
-      this.handleDataChannels(peerConnection);
-      peerConnection.setRemoteDescription(offer, () => {
-        peerConnection.onicecandidate = event => {
+  handleMessage(message) {
+    console.log('---------------------------------');
+    console.log(JSON.stringify(message));
+    switch (message.type) {
+      case 'answer-for-walker':
+        this._lastPeerCon.setRemoteDescription(new window.RTCSessionDescription(message.payload));
+        break;
+      case 'ice-candidate-for-walker':
+        console.log('ice-candidate-for-walker');
+        this._lastPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload));
+        break;
+      case 'walker-joining-ice-candidate':
+        console.log('walker-joining-ice-candidate');
+        this._firstPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload));
+        break;
+      case 'walker-joining-answer':
+        this._firstPeerCon.setRemoteDescription(new window.RTCSessionDescription(message.payload));
+        break;
+      default:
+        console.log('Message type unknown');
+        console.log(JSON.stringify(message));
+        console.log('Type: ' + message.type);
+        console.log(message);
+    }
+  }
+
+  // Creates a new PeerConnection on the _nextCon and sends an offer to _currentCon
+  connectToLastPeer(channel) {
+    var _this2 = this;
+
+    return _asyncToGenerator(function* () {
+      const con = new window.RTCPeerConnection(_config2.default.iceConfig);
+      try {
+        const dataChannel = con.createDataChannel('Last-Peer-Data-Channel');
+        // Setup handlers for the locally created channel
+        dataChannel.onmessage = function (message) {
+          _this2.handleMessage(JSON.parse(message.data), con, dataChannel);
+        };
+
+        dataChannel.onopen = function (event) {
+          console.log('Connected to last peer');
+        };
+        con.onicecandidate = function (event) {
           if (event.candidate == null) {
-            // TODO: Send end of candidates event
+            // TODO: send end of candidate event
           } else {
             if (event.candidate) {
-              if (this.isHostIceCandidate(event.candidate.candidate)) {
-                console.log('Host candidate, sending');
-                const jsonOffer = JSON.stringify({
-                  type: 'ice-candidate-for-peer-relay',
-                  payload: event.candidate,
-                  uuid: this._uuid
-                });
-                channel.send(jsonOffer);
-                if (this.myIds.length > 0) {
-                  // Create artificial ICE
-                  var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, this.myIds);
-                  console.log('Sending artificial ICE');
-                  const articificalIce = JSON.stringify({
-                    type: 'ice-candidate-for-peer-relay',
-                    payload: candidate,
-                    uuid: this._uuid
-                  });
-                  channel.send(articificalIce);
-                } else {
-                  console.log('Cant send DICE yet');
-                }
-              } else {
-                if (this.myIds.length === 0) {
-                  console.log('Not host candidate, sending anyway');
-                  const jsonOffer = JSON.stringify({
-                    type: 'ice-candidate-for-peer-relay',
-                    payload: event.candidate,
-                    uuid: this._uuid
-                  });
-                  channel.send(jsonOffer);
-                  this.myIds.push(this.getIdStringsFromCandidate(event.candidate.candidate));
-                } else {
-                  console.log('Not host candidate, not sending');
-                }
-              }
+              const jsonOffer = JSON.stringify({
+                walkerId: _this2._uuid,
+                type: 'ice-candidate-for-last-peer',
+                payload: event.candidate,
+                uuid: _this2._uuid
+              });
+              channel.send(jsonOffer);
             }
           }
         };
-        peerConnection.createAnswer(answer => {
-          peerConnection.setLocalDescription(answer);
-          channel.send(JSON.stringify({
-            type: 'answer-from-walker-relay',
-            payload: peerConnection.localDescription,
-            walkerId: this._uuid
-          }));
-        }, errorHandler);
-      }, errorHandler);
-    } else {
-      // console.log(JSON.stringify(message))
-      if (this.isHostIceCandidate(message.candidate)) {
-        for (var i = 0; i < this.iceIds.length; i++) {
-          var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[i]);
-          // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
-          console.log('Candidate: ' + JSON.stringify(candidate));
-          console.log('Adding DICE now');
-          peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate));
-        }
+        // Create the offer for a p2p connection
+        const offer = yield con.createOffer();
+        yield con.setLocalDescription(offer);
+        const jsonOffer = JSON.stringify({
+          walkerId: _this2._uuid,
+          type: 'offer-for-last-peer',
+          payload: con.localDescription,
+          uuid: _this2._uuid
+        });
+        _this2._lastPeerCon = con;
+
+        console.log('Initiating request to connect with last peer');
+        // console.log(JSON.stringify(jsonOffer))
+        // console.log(channel)
+        channel.send(jsonOffer);
+        // console.log('Its sent!!')
+      } catch (err) {
+        console.log(err);
       }
-      // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
-    }
+    })();
   }
+
+  handleDataChannels(peerConnection) {
+    peerConnection.ondatachannel = event => {
+      const channel = event.channel;
+
+      channel.onmessage = msg => {
+        const message = JSON.parse(msg.data);
+        this.handleMessage(message, this._nextCon, channel);
+      };
+
+      channel.onopen = evt => {
+        // this._currentCon = this._nextCon
+        // this._nextCon = new window.RTCPeerConnection(config.iceConfig)
+        this._nodeCount++;
+        // console.log(this._requestTimeSend)
+        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
+        // console.log('Sending next request.')
+        this._requestTimeSend = Date.now();
+        // channel.send(JSON.stringify({
+        //   type: 'get-offer-from-next-peer',
+        //   walkerId: this._uuid
+        // }))
+      };
+    };
+  }
+
+  /*
+  -----------------------------------------------------------------------------------
+  |
+  | DICE Candidate Creation Functions
+  |
+  -----------------------------------------------------------------------------------
+  */
 
   isHostIceCandidate(candidate) {
     return candidate.indexOf('host') > -1;
@@ -237,31 +311,6 @@ class WalkerPeer {
     return substring;
   }
 
-  // 'walker-request-answer'
-  handleDataChannels(peerConnection) {
-    peerConnection.ondatachannel = event => {
-      const channel = event.channel;
-
-      channel.onmessage = msg => {
-        const message = JSON.parse(msg.data);
-        this.handleMessage(message, this._nextCon, channel);
-      };
-
-      channel.onopen = evt => {
-        this._currentCon = this._nextCon;
-        this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
-        this._nodeCount++;
-        // console.log(this._requestTimeSend)
-        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
-        // console.log('Sending next request.')
-        this._requestTimeSend = Date.now();
-        channel.send(JSON.stringify({
-          type: 'get-offer-from-next-peer',
-          walkerId: this._uuid
-        }));
-      };
-    };
-  }
 }
 
 const newPeer = new WalkerPeer();
