@@ -163,6 +163,7 @@ class WalkerPeer {
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
         }));
+        this._requestTimeSend = Date.now();
       };
     };
   }
