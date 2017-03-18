@@ -67,6 +67,7 @@ class WalkerPeer {
       }
       this._firstPeerChannel = dataChannel
       dataChannel.onopen = () => {
+        this.timeJoinedNetwork = Date.now()
         console.log('Joined network!')
         this.connectToLastPeer(dataChannel)
         // TODO: Initiate request
@@ -134,6 +135,7 @@ class WalkerPeer {
       }
 
       dataChannel.onopen = (event) => {
+        console.log(Date.now() - this.timeJoinedNetwork)
         console.log('Connected to last peer')
       }
       con.onicecandidate = (event) => {
