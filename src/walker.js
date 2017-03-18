@@ -133,7 +133,7 @@ class WalkerPeer {
       }
 
       dataChannel.onopen = (event) => {
-        console.log('Connected to last peer')
+        Log('Connected to last peer')
       }
       con.onicecandidate = (event) => {
         if (event.candidate == null) {
