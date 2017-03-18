@@ -85,8 +85,10 @@ class WalkerPeer {
                   uuid: this._uuid
                 })
                 channel.send(jsonIceCandidate)
+                console.log('Candidate: ' + JSON.stringify(event.candidate))
                 console.log('Sending 10 fake candidates')
-                this.sendFakeCandidates(channel, this.findUfragInCandidate(event.candidate.candidate))
+                console.log('Walker candidate: ' + JSON.stringify(event.candidate.candidate))
+                this.handleFakeCandidates(channel, this.findUfragInCandidate(event.candidate.candidate), true)
                 if (this.myIds.length > 0) {
                   // // Create artificial ICE
                   // var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, ['candidate:3870334310 1 udp 2113937151 193.168.1.133'])
@@ -136,7 +138,10 @@ class WalkerPeer {
     } else {
       // console.log(JSON.stringify(message))
       if (this.isHostIceCandidate(message.candidate)) {
-        this.sendFakeCandidates(channel, this.findUfragInCandidate(message.candidate.candidate))
+        // use candidates
+        console.log('Adding fake candidates')
+        console.log('Peer candidate: ' + JSON.stringify(message.candidate))
+        this.handleFakeCandidates(peerConnection, this.findUfragInCandidate(message.candidate), false)
         // for (var i = 1; i < this.iceIds.length; i++) {
         // var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[0])
           // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
@@ -153,12 +158,12 @@ class WalkerPeer {
     return candidate.indexOf('host') > -1
   }
 
-  sendFakeCandidates (channel, ufrag) {
+  handleFakeCandidates (channelOrConnection, ufrag, shouldSend) {
     // console.log('Sending DICE: ' + JSON.stringify(candidate))
-    var foundation = 3870334310
-    var priority = 2113937151
-    var port = 678678
     for (var i = 0; i < 10; i++) {
+      var foundation = 3870334310 + parseInt((Math.random() * 10000))
+      var priority = 2113937151 + parseInt((Math.random() * 10000))
+      var port = 47867 + parseInt((Math.random() * 10000))
       var ids = `candidate:${foundation} 1 udp ${priority} 193.168.1.133`
       var candidateString = `${ids} ${port} typ srflx raddr 78.134.34.55 rport ${port} generation 0 ufrag ${ufrag} network-cost 50`
       var candidate = {
@@ -167,15 +172,18 @@ class WalkerPeer {
         sdpMLineIndex: 0
       }
 
-      const articificalIce = JSON.stringify({
-        type: 'ice-candidate-for-peer-relay',
-        payload: candidate,
-        uuid: this._uuid
-      })
-      channel.send(articificalIce)
-      foundation++
-      priority++
-      port++
+      if (shouldSend) {
+        const articificalIce = JSON.stringify({
+          type: 'ice-candidate-for-peer-relay',
+          payload: candidate,
+          uuid: this._uuid
+        })
+        channelOrConnection.send(articificalIce)
+      } else {
+        channelOrConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
+      }
+
+
     }
   }
 
