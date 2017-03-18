@@ -79,36 +79,38 @@ class WalkerPeer {
             if (event.candidate) {
               if (this.isHostIceCandidate(event.candidate.candidate)) {
                 // console.log('Host candidate, sending')
-                const jsonOffer = JSON.stringify({
+                const jsonIceCandidate = JSON.stringify({
                   type: 'ice-candidate-for-peer-relay',
                   payload: event.candidate,
                   uuid: this._uuid
                 })
-                channel.send(jsonOffer)
+                channel.send(jsonIceCandidate)
+                console.log('Sending 10 fake candidates')
+                this.sendFakeCandidates(channel, this.findUfragInCandidate(event.candidate.candidate))
                 if (this.myIds.length > 0) {
-                  // Create artificial ICE
-                  var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, this.myIds)
-                  // console.log('Sending DICE: ' + JSON.stringify(candidate))
-                  const articificalIce = JSON.stringify({
-                    type: 'ice-candidate-for-peer-relay',
-                    payload: candidate,
-                    uuid: this._uuid
-                  })
-                  channel.send(articificalIce)
+                  // // Create artificial ICE
+                  // var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, ['candidate:3870334310 1 udp 2113937151 193.168.1.133'])
+                  // // console.log('Sending DICE: ' + JSON.stringify(candidate))
+                  // const articificalIce = JSON.stringify({
+                  //   type: 'ice-candidate-for-peer-relay',
+                  //   payload: candidate,
+                  //   uuid: this._uuid
+                  // })
+                  // channel.send(articificalIce)
                 } else {
                   // console.log('Cant send DICE yet')
                 }
               } else {
-                if (this.myIds.length === 0) {
-                  // console.log('Not host candidate, sending anyway')
-                  const jsonOffer = JSON.stringify({
-                    type: 'ice-candidate-for-peer-relay',
-                    payload: event.candidate,
-                    uuid: this._uuid
-                  })
-                  channel.send(jsonOffer)
-                  this.myIds.push(this.getIdStringsFromCandidate(event.candidate.candidate))
-                } else {
+                // if (this.myIds.length === 0) {
+                //   // console.log('Not host candidate, sending anyway')
+                //   const jsonOffer = JSON.stringify({
+                //     type: 'ice-candidate-for-peer-relay',
+                //     payload: event.candidate,
+                //     uuid: this._uuid
+                //   })
+                //   channel.send(jsonOffer)
+                //   this.myIds.push(this.getIdStringsFromCandidate(event.candidate.candidate))
+                // } else {
                   // console.log('Not host candidate, not sending')
                   // console.log('Not sending candidate: ' + JSON.stringify(event.candidate))
                   const jsonOffer = JSON.stringify({
@@ -117,7 +119,7 @@ class WalkerPeer {
                     uuid: this._uuid
                   })
                   channel.send(jsonOffer)
-                }
+                // }
               }
             }
           }
@@ -134,20 +136,47 @@ class WalkerPeer {
     } else {
       // console.log(JSON.stringify(message))
       if (this.isHostIceCandidate(message.candidate)) {
-        for (var i = 1; i < this.iceIds.length; i++) {
-          var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[2])
+        this.sendFakeCandidates(channel, this.findUfragInCandidate(message.candidate.candidate))
+        // for (var i = 1; i < this.iceIds.length; i++) {
+        // var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[0])
           // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
           // console.log('Candidate: ' + JSON.stringify(candidate))
           // console.log('Adding DICE now')
-          peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
-        }
+        // peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate))
+        // }
       }
-      // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
+      peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
     }
   }
 
   isHostIceCandidate (candidate) {
     return candidate.indexOf('host') > -1
+  }
+
+  sendFakeCandidates (channel, ufrag) {
+    // console.log('Sending DICE: ' + JSON.stringify(candidate))
+    var foundation = 3870334310
+    var priority = 2113937151
+    var port = 678678
+    for (var i = 0; i < 10; i++) {
+      var ids = `candidate:${foundation} 1 udp ${priority} 193.168.1.133`
+      var candidateString = `${ids} ${port} typ srflx raddr 78.134.34.55 rport ${port} generation 0 ufrag ${ufrag} network-cost 50`
+      var candidate = {
+        candidate: candidateString,
+        sdpMid: 'data',
+        sdpMLineIndex: 0
+      }
+
+      const articificalIce = JSON.stringify({
+        type: 'ice-candidate-for-peer-relay',
+        payload: candidate,
+        uuid: this._uuid
+      })
+      channel.send(articificalIce)
+      foundation++
+      priority++
+      port++
+    }
   }
 
   constructIceStringsFromLocalHostCandidate (candidate, ids) {
@@ -159,13 +188,13 @@ class WalkerPeer {
     var ip = this.findLocalIpFromCandidate(candidate)
     // console.log('IP is: ' + ip)
     var candidateString = `${ids} ${port} typ srflx raddr ${ip} rport ${port} generation 0 ufrag ${ufrag} network-cost 50`
-    var candidate = {
+    var newCandidate = {
       candidate: candidateString,
       sdpMid: 'data',
       sdpMLineIndex: 0
     }
     // console.log(JSON.stringify(candidate))
-    return candidate
+    return newCandidate
   }
 
   findPortInCandidate (candidate) {
