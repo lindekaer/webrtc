@@ -9,7 +9,7 @@
 */
 
 var WebSocketServer = require('uws').Server;
-var wss = new WebSocketServer({ port: 9000 });
+var wss = new WebSocketServer({ port: 8080 });
 
 /*
 -----------------------------------------------------------------------------------

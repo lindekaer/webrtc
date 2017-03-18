@@ -47,6 +47,7 @@ class WalkerPeer {
   }
 
   connectToServer() {
+    console.log('Connected to server...');
     this._signalingChannel = new window.WebSocket(_config2.default.webSocketUrl);
     this._signalingChannel.onopen = this.onSocketOpen.bind(this);
     this._signalingChannel.onmessage = this.onSocketMessage.bind(this);

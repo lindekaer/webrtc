@@ -2688,9 +2688,9 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
-  uuid: 'SIGNALING_UUID',
-  webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
+  webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
+  uuid: 'SIGNALING_UUID'
+  // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
   // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
   // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
@@ -2744,6 +2744,7 @@ class WalkerPeer {
   }
 
   connectToServer() {
+    console.log('Connected to server...');
     this._signalingChannel = new window.WebSocket(_config2.default.webSocketUrl);
     this._signalingChannel.onopen = this.onSocketOpen.bind(this);
     this._signalingChannel.onmessage = this.onSocketMessage.bind(this);
