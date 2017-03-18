@@ -66,7 +66,7 @@ class WalkerPeer {
       }
       this._firstPeerChannel = dataChannel
       dataChannel.onopen = () => {
-        console.log('Joined network!')
+        Log('Joined network!')
         this.connectToLastPeer(dataChannel)
         // TODO: Initiate request
       }
