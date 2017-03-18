@@ -120,7 +120,8 @@ class Peer {
             const msg = JSON.stringify({
               type: 'joining',
               payload: _this._entryCon.localDescription,
-              joinerId: _this._uuid
+              joinerId: _this._uuid,
+              containerUuid: _config2.default.uuid
             });
             _this.signalingChannel.send(msg);
           }

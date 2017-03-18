@@ -79,6 +79,7 @@ function onClose () {
 }
 
 const joining = (msg, socket) => {
+  console.log('Joining attempt from: ' + msg.containerUuid)
   peers[msg.joinerId] = socket
   if (!lastPeer) {
     firstPeer = socket

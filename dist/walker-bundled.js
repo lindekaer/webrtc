@@ -17,11 +17,11 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID'
+  // webSocketUrl: 'SIGNALING_URL',
+  // uuid: 'SIGNALING_UUID'
   // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -107,6 +107,7 @@ class WalkerPeer {
         };
         _this._firstPeerChannel = dataChannel;
         dataChannel.onopen = function () {
+          _this.timeJoinedNetwork = Date.now();
           console.log('Joined network!');
           _this.connectToLastPeer(dataChannel);
           // TODO: Initiate request
@@ -116,7 +117,7 @@ class WalkerPeer {
         yield _this._firstPeerCon.setLocalDescription(offer);
         _this._firstPeerCon.onicecandidate = function (event) {
           if (event.candidate !== null) {
-            console.log('Candidate found');
+            // console.log('Candidate found')
             const msg = JSON.stringify({
               type: 'ice-candidate-for-peer-relay',
               payload: event.candidate,
@@ -138,28 +139,28 @@ class WalkerPeer {
   }
 
   handleMessage(message) {
-    console.log('---------------------------------');
-    console.log(JSON.stringify(message));
+    // console.log('---------------------------------')
+    // console.log(JSON.stringify(message))
     switch (message.type) {
       case 'answer-for-walker':
         this._lastPeerCon.setRemoteDescription(new window.RTCSessionDescription(message.payload));
         break;
       case 'ice-candidate-for-walker':
-        console.log('ice-candidate-for-walker');
+        // console.log('ice-candidate-for-walker')
         this._lastPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload));
         break;
       case 'walker-joining-ice-candidate':
-        console.log('walker-joining-ice-candidate');
+        // console.log('walker-joining-ice-candidate')
         this._firstPeerCon.addIceCandidate(new window.RTCIceCandidate(message.payload));
         break;
       case 'walker-joining-answer':
         this._firstPeerCon.setRemoteDescription(new window.RTCSessionDescription(message.payload));
         break;
       default:
-        console.log('Message type unknown');
-        console.log(JSON.stringify(message));
-        console.log('Type: ' + message.type);
-        console.log(message);
+      // console.log('Message type unknown')
+      // console.log(JSON.stringify(message))
+      // console.log('Type: ' + message.type)
+      // console.log(message)
     }
   }
 
@@ -177,7 +178,8 @@ class WalkerPeer {
         };
 
         dataChannel.onopen = function (event) {
-          console.log('Connected to last peer');
+          // console.log(Date.now() - this.timeJoinedNetwork)
+          console.log(`Connection to last peer took: ${Date.now() - _this2.timeJoinedNetwork} ms`);
         };
         con.onicecandidate = function (event) {
           if (event.candidate == null) {
