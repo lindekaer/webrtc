@@ -20,8 +20,8 @@ export default {
     }
   },
   // webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID',
-  webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
+  // uuid: 'SIGNALING_UUID',
+  webSocketUrl: 'ws://174.138.65.125:8080/socketserver',
   // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 }
