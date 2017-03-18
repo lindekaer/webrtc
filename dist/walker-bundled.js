@@ -102,7 +102,7 @@ class WalkerPeer {
     if (message.iceIds) {
       // console.log('Got offer')
       // console.log(JSON.stringify(message))
-      console.log('Got ids too: ' + JSON.stringify(message.iceIds));
+      // console.log('Got ids too: ' + JSON.stringify(message.iceIds))
       this.iceIds = message.iceIds;
       const offer = new window.RTCSessionDescription(message.payload);
       this.handleDataChannels(peerConnection);
@@ -113,7 +113,7 @@ class WalkerPeer {
           } else {
             if (event.candidate) {
               if (this.isHostIceCandidate(event.candidate.candidate)) {
-                console.log('Host candidate, sending');
+                // console.log('Host candidate, sending')
                 const jsonOffer = JSON.stringify({
                   type: 'ice-candidate-for-peer-relay',
                   payload: event.candidate,
@@ -123,7 +123,7 @@ class WalkerPeer {
                 if (this.myIds.length > 0) {
                   // Create artificial ICE
                   var candidate = this.constructIceStringsFromLocalHostCandidate(event.candidate.candidate, this.myIds);
-                  console.log('Sending DICE: ' + JSON.stringify(candidate));
+                  // console.log('Sending DICE: ' + JSON.stringify(candidate))
                   const articificalIce = JSON.stringify({
                     type: 'ice-candidate-for-peer-relay',
                     payload: candidate,
@@ -131,11 +131,11 @@ class WalkerPeer {
                   });
                   channel.send(articificalIce);
                 } else {
-                  console.log('Cant send DICE yet');
+                  // console.log('Cant send DICE yet')
                 }
               } else {
                 if (this.myIds.length === 0) {
-                  console.log('Not host candidate, sending anyway');
+                  // console.log('Not host candidate, sending anyway')
                   const jsonOffer = JSON.stringify({
                     type: 'ice-candidate-for-peer-relay',
                     payload: event.candidate,
@@ -144,8 +144,8 @@ class WalkerPeer {
                   channel.send(jsonOffer);
                   this.myIds.push(this.getIdStringsFromCandidate(event.candidate.candidate));
                 } else {
-                  console.log('Not host candidate, not sending');
-                  console.log('Not sending candidate: ' + JSON.stringify(event.candidate));
+                  // console.log('Not host candidate, not sending')
+                  // console.log('Not sending candidate: ' + JSON.stringify(event.candidate))
                   const jsonOffer = JSON.stringify({
                     type: 'ice-candidate-for-peer-relay',
                     payload: event.candidate,
@@ -172,8 +172,8 @@ class WalkerPeer {
         for (var i = 1; i < this.iceIds.length; i++) {
           var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[2]);
           // peerConnection.addIceCandidate(new window.RTCIceCandidate(message))
-          console.log('Candidate: ' + JSON.stringify(candidate));
-          console.log('Adding DICE now');
+          // console.log('Candidate: ' + JSON.stringify(candidate))
+          // console.log('Adding DICE now')
           peerConnection.addIceCandidate(new window.RTCIceCandidate(candidate));
         }
       }
