@@ -39,6 +39,7 @@ class WalkerPeer {
   constructor() {
     this._uuid = _uuid2.default.v1();
     this.connectToServer();
+    this._requestTimeSend = Date.now();
   }
 
   connectToServer() {
@@ -65,6 +66,7 @@ class WalkerPeer {
       uuid: this._uuid
     });
     this._socket.send(msg);
+    this._requestTimeSend = Date.now();
   }
 
   handleMessage(message, peerConnection, channel) {
@@ -115,7 +117,8 @@ class WalkerPeer {
         this._currentCon = this._nextCon;
         this._nextCon = new window.RTCPeerConnection(_config2.default.iceConfig);
         this._nodeCount++;
-        console.log('Connection established to node ' + this._nodeCount);
+        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
+        this._requestTimeSend = Date.now();
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
