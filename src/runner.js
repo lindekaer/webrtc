@@ -24,15 +24,24 @@ import fs from 'fs'
 */
 
 const args = minimist(process.argv.slice(2))
+const DOCKER_NAME = uuid.v1()
 
 const NUM_CONTAINERS = args['num-containers'] || 10
 const NUM_PEERS = args['num-peers'] || 20
 const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketserver'
-const TIMEOUT = args['timeout'] || ms('5m')
+const TIMEOUT = args['timeout'] || ms('10000m')
 const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'walker'
-const DOCKER_IMAGE_ID = `webrtc/${uuid.v1()}`
+const DOCKER_IMAGE_ID = `webrtc/${DOCKER_NAME}`
 const ID = args['id']
 const FIRST_PEER = args['first-peer']
+
+let OUTPUT_FILE
+let OUTPUT_FILE_PATH
+
+if (MODE === 'walker') {
+  OUTPUT_FILE = args['output-file']
+  OUTPUT_FILE_PATH = path.join(__dirname, '..', 'data', OUTPUT_FILE)
+}
 
 if (MODE === 'full') {
   async.series([
@@ -58,11 +67,10 @@ if (MODE === 'spawn') {
 if (MODE === 'walker') {
   async.series([
     createDockerImage,
-    (cb) => { sleep(5000, cb) },
+    (cb) => { sleep(1000, cb) },
     startWalker
   ], clean)
 }
-
 
 /*
 -----------------------------------------------------------------------------------
@@ -103,7 +111,7 @@ function runContainer (currentNum, type, cb) {
 }
 
 function startWalker (cb) {
-  const child = spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL])
+  const child = spawn('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL])
   let numConnections = 0
   let durations = []
   let timeTotal = 0
@@ -112,7 +120,7 @@ function startWalker (cb) {
   let prevTime
   let duration
   child.stdout.on('data', function (data) {
-    console.log(data.toString())
+    // console.log(data.toString())
     if (data.toString().indexOf('Connection established to') !== -1) {
       let output = data.toString()
       let lines = output.split('file')
@@ -143,7 +151,6 @@ function startWalker (cb) {
           if (duration > timeMax) timeMax = duration
 
           durations.push(duration)
-          fs.appendFile(path.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {})
 
           timeTotal += duration
 
@@ -170,12 +177,15 @@ function startWalker (cb) {
           console.log(`Variance:                       ${colors.green.bold.underline(`${variance.toFixed(2)}`)}`)
           console.log(`Standard deviation:             ${colors.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`)
           console.log('')
-
-          console.log('DATA:')
-          console.log(JSON.stringify(durations, null, 2))
-
-          child.kill()
-          cb()
+          console.log(`Writing test results...`)
+          let fileContent = ''
+          for (let d of durations) fileContent += `${d}\n`
+          fs.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
+            console.log(`Appended results to ${colors.green.bold(OUTPUT_FILE_PATH)}!`)
+            console.log('')
+            child.kill()
+            cb()
+          })
         }
       })
     }
@@ -183,8 +193,9 @@ function startWalker (cb) {
 }
 
 function clean () {
-  exec(`${path.join(__dirname, '..', 'clean.sh')} ${DOCKER_IMAGE_ID}`, (err, stdout, stderr) => {
+  exec(`${path.join(__dirname, '..', 'clean.sh')} ${DOCKER_NAME}`, (err, stdout, stderr) => {
     console.log('Cleanup completed')
+    process.exit()
   })
 }
 

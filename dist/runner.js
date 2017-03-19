@@ -49,15 +49,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 */
 
 const args = (0, _minimist2.default)(process.argv.slice(2));
+const DOCKER_NAME = _uuid2.default.v1();
 
 const NUM_CONTAINERS = args['num-containers'] || 10;
 const NUM_PEERS = args['num-peers'] || 20;
 const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketserver';
-const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
+const TIMEOUT = args['timeout'] || (0, _ms2.default)('10000m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
-const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
+const DOCKER_IMAGE_ID = `webrtc/${DOCKER_NAME}`;
 const ID = args['id'];
 const FIRST_PEER = args['first-peer'];
+
+let OUTPUT_FILE;
+let OUTPUT_FILE_PATH;
+
+if (MODE === 'walker') {
+  OUTPUT_FILE = args['output-file'];
+  OUTPUT_FILE_PATH = _path2.default.join(__dirname, '..', 'data', OUTPUT_FILE);
+}
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -81,7 +90,7 @@ if (MODE === 'spawn') {
 
 if (MODE === 'walker') {
   _async2.default.series([createDockerImage, cb => {
-    sleep(5000, cb);
+    sleep(1000, cb);
   }, startWalker], clean);
 }
 
@@ -124,7 +133,7 @@ function runContainer(currentNum, type, cb) {
 }
 
 function startWalker(cb) {
-  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
+  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
   let numConnections = 0;
   let durations = [];
   let timeTotal = 0;
@@ -133,7 +142,7 @@ function startWalker(cb) {
   let prevTime;
   let duration;
   child.stdout.on('data', function (data) {
-    console.log(data.toString());
+    // console.log(data.toString())
     if (data.toString().indexOf('Connection established to') !== -1) {
       let output = data.toString();
       let lines = output.split('file');
@@ -163,7 +172,6 @@ function startWalker(cb) {
           if (duration > timeMax) timeMax = duration;
 
           durations.push(duration);
-          _fs2.default.appendFile(_path2.default.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {});
 
           timeTotal += duration;
 
@@ -190,12 +198,15 @@ function startWalker(cb) {
           console.log(`Variance:                       ${_colors2.default.green.bold.underline(`${variance.toFixed(2)}`)}`);
           console.log(`Standard deviation:             ${_colors2.default.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`);
           console.log('');
-
-          console.log('DATA:');
-          console.log(JSON.stringify(durations, null, 2));
-
-          child.kill();
-          cb();
+          console.log(`Writing test results...`);
+          let fileContent = '';
+          for (let d of durations) fileContent += `${d}\n`;
+          _fs2.default.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
+            console.log(`Appended results to ${_colors2.default.green.bold(OUTPUT_FILE_PATH)}!`);
+            console.log('');
+            child.kill();
+            cb();
+          });
         }
       });
     }
@@ -203,8 +214,9 @@ function startWalker(cb) {
 }
 
 function clean() {
-  (0, _child_process.exec)(`${_path2.default.join(__dirname, '..', 'clean.sh')} ${DOCKER_IMAGE_ID}`, (err, stdout, stderr) => {
+  (0, _child_process.exec)(`${_path2.default.join(__dirname, '..', 'clean.sh')} ${DOCKER_NAME}`, (err, stdout, stderr) => {
     console.log('Cleanup completed');
+    process.exit();
   });
 }
 

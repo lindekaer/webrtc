@@ -1,5 +1,5 @@
 #! /bin/bash
 
+docker stop $1
+docker rm $1
 docker rmi $1
-docker stop $(docker ps -a -q)
-docker rm $(docker ps -a -q)

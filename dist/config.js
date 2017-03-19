@@ -16,9 +16,9 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID',
+  webSocketUrl: 'SIGNALING_URL',
+  // uuid: 'SIGNALING_UUID'
   // webSocketUrl: 'ws://188.226.128.129:8080/socketserver',
-  webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };

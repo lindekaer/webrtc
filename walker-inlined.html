@@ -2688,11 +2688,11 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID',
+  webSocketUrl: 'SIGNALING_URL',
+  // uuid: 'SIGNALING_UUID'
   // webSocketUrl: 'ws://188.226.128.129:8080/socketserver',
-  webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -2829,7 +2829,7 @@ class WalkerPeer {
       channel.onopen = evt => {
         this._nodeCount++;
         // Log('Connection established to node ' + this._nodeCount)
-        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`);
+        Log(`Connection established to node ${this._nodeCount}`);
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
