@@ -118,7 +118,7 @@ class WalkerPeer {
       channel.onopen = (evt) => {
         this._nodeCount++
         // Log('Connection established to node ' + this._nodeCount)
-        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`)
+        Log(`Connection established to node ${this._nodeCount}`)
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
