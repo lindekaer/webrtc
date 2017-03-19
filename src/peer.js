@@ -129,8 +129,10 @@ class Peer {
       }
 
       dataChannelReady.onclose = () => {
+        console.log('CLOSING!!!')
         con.close()
         delete this._walkerConnections[[walkerId]]
+        console.log('Remaining connections: ' + JSON.stringify(this._walkerConnections))
       }
 
       dataChannelReady.onopen = (event) => {
@@ -268,8 +270,9 @@ class Peer {
         }))
         // channel.send(this._waitingOffer)
         break
-      case 'chat':
-        console.log(`FROM (${message.uuid}): ${message.payload}`)
+      case 'close':
+        console.log('Closing channel')
+        channel.close()
         break
       case 'request-offer-for-walker':
         // console.log('Current Channel: ', channel)
@@ -280,7 +283,9 @@ class Peer {
         // console.log('sending offer to walker')
         this._walkerConnections[[message.walkerId]].channel.send(JSON.stringify(message.payload))
         break
-      default: console.log(`No case for type: ${message.type}`)
+      default:
+        console.log(`No case for type: ${message.type}`)
+        console.log(JSON.stringify(message))
     }
   }
 }

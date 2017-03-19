@@ -49,6 +49,8 @@ class WalkerPeer {
   init () {
     this._currentCon = new RTCPeerConnection(config.iceConfig)
     this._nextCon = new RTCPeerConnection(config.iceConfig)
+    this._currentChannel
+    this._nextChannel
     this._nodeCount = 0
     const msg = JSON.stringify({
       type: 'walker-request',
@@ -86,11 +88,14 @@ class WalkerPeer {
   handleDataChannels (peerConnection) {
     peerConnection.ondatachannel = (event) => {
       const channel = event.channel
+      this._nextChannel = channel
+      console.log('On data channel')
       channel.onmessage = (msg) => {
+        console.log('On message')
         // console.log('Recieved offer from node ' + this._nodeCount)
         const data = JSON.parse(msg.data)
         const offer = new RTCSessionDescription(data)
-        // this._currentCon = this._nextCon
+        this._currentCon = this._nextCon
         this._nextCon = new RTCPeerConnection(config.iceConfig)
         this.handleDataChannels(this._nextCon)
 
@@ -115,6 +120,7 @@ class WalkerPeer {
       }
 
       channel.onopen = (evt) => {
+        console.log('On open')
         this._nodeCount++
         // Log('Connection established to node ' + this._nodeCount)
         Log(`Connection established to node ${this._nodeCount}`)
@@ -122,8 +128,14 @@ class WalkerPeer {
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
         }))
+        if (this._currentChannel) {
+          console.log('Closing connection')
+          this._currentChannel.send(JSON.stringify({type: 'close'}))
+        }
         this._currentCon.close()
+        // channel.close()
         this._currentCon = this._nextCon
+        this._currentChannel = this._nextChannel
         this._requestTimeSend = Date.now()
       }
     }
