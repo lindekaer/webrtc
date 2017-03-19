@@ -140,6 +140,11 @@ class Peer {
           _this.handleChannelMessage(message, dataChannelReady);
         };
 
+        dataChannelReady.onclose = function () {
+          con.close();
+          delete _this._walkerConnections[[walkerId]];
+        };
+
         dataChannelReady.onopen = function (event) {
           console.log('Connection opened to walker with id ' + walkerId);
           _this._walkerConnections[[walkerId]] = {

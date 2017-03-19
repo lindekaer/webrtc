@@ -17,9 +17,9 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
+  // webSocketUrl: 'SIGNALING_URL',
   // uuid: 'SIGNALING_UUID'
-  // webSocketUrl: 'ws://188.226.128.129:8080/socketserver',
+  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
   // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
   uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
@@ -164,6 +164,11 @@ class Peer {
         dataChannelReady.onmessage = function (message) {
           // console.log('onMessage called')
           _this.handleChannelMessage(message, dataChannelReady);
+        };
+
+        dataChannelReady.onclose = function () {
+          con.close();
+          delete _this._walkerConnections[[walkerId]];
         };
 
         dataChannelReady.onopen = function (event) {

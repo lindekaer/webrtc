@@ -59,7 +59,7 @@ class WalkerPeer {
 
   init() {
     this._currentCon = new RTCPeerConnection(_config2.default.iceConfig);
-    this._nextCon;
+    this._nextCon = new RTCPeerConnection(_config2.default.iceConfig);
     this._nodeCount = 0;
     const msg = JSON.stringify({
       type: 'walker-request',
@@ -77,15 +77,15 @@ class WalkerPeer {
       try {
         const message = JSON.parse(rawMessage);
         const offer = new RTCSessionDescription(message);
-        _this.handleDataChannels(_this._currentCon);
-        yield _this._currentCon.setRemoteDescription(offer);
-        const answer = yield _this._currentCon.createAnswer();
-        _this._currentCon.setLocalDescription(answer);
-        _this._currentCon.onicecandidate = function (candidate) {
+        _this.handleDataChannels(_this._nextCon);
+        yield _this._nextCon.setRemoteDescription(offer);
+        const answer = yield _this._nextCon.createAnswer();
+        _this._nextCon.setLocalDescription(answer);
+        _this._nextCon.onicecandidate = function (candidate) {
           if (candidate.candidate == null) {
             var answer = JSON.stringify({
               type: 'walker-request-answer',
-              payload: _this._currentCon.localDescription,
+              payload: _this._nextCon.localDescription,
               walkerId: _this._uuid
             });
             _this._socket.send(answer);
@@ -105,7 +105,7 @@ class WalkerPeer {
         // console.log('Recieved offer from node ' + this._nodeCount)
         const data = JSON.parse(msg.data);
         const offer = new RTCSessionDescription(data);
-        this._currentCon = this._nextCon;
+        // this._currentCon = this._nextCon
         this._nextCon = new RTCPeerConnection(_config2.default.iceConfig);
         this.handleDataChannels(this._nextCon);
 
@@ -137,6 +137,8 @@ class WalkerPeer {
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
         }));
+        this._currentCon.close();
+        this._currentCon = this._nextCon;
         this._requestTimeSend = Date.now();
       };
     };
