@@ -128,6 +128,10 @@ class Peer {
         this.handleChannelMessage(message, dataChannelReady)
       }
 
+      dataChannelReady.onclose = () => {
+        delete this._walkerConnections[[walkerId]]
+      }
+
       dataChannelReady.onopen = (event) => {
         console.log('Connection opened to walker with id ' + walkerId)
         this._walkerConnections[[walkerId]] = {

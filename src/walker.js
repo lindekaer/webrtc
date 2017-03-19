@@ -90,6 +90,7 @@ class WalkerPeer {
         // console.log('Recieved offer from node ' + this._nodeCount)
         const data = JSON.parse(msg.data)
         const offer = new RTCSessionDescription(data)
+        this._currentCon.close()
         this._currentCon = this._nextCon
         this._nextCon = new RTCPeerConnection(config.iceConfig)
         this.handleDataChannels(this._nextCon)
