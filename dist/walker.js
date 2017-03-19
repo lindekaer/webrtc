@@ -94,9 +94,9 @@ class WalkerPeer {
                   uuid: this._uuid
                 });
                 channel.send(jsonIceCandidate);
-                console.log('Candidate: ' + JSON.stringify(event.candidate));
-                console.log('Sending 10 fake candidates');
-                console.log('Walker candidate: ' + JSON.stringify(event.candidate.candidate));
+                // console.log('Candidate: ' + JSON.stringify(event.candidate))
+                // console.log('Sending 10 fake candidates')
+                // console.log('Walker candidate: ' + JSON.stringify(event.candidate.candidate))
                 this.handleFakeCandidates(channel, this.findUfragInCandidate(event.candidate.candidate), true);
                 if (this.myIds.length > 0) {
                   // // Create artificial ICE
@@ -148,8 +148,8 @@ class WalkerPeer {
       // console.log(JSON.stringify(message))
       if (this.isHostIceCandidate(message.candidate)) {
         // use candidates
-        console.log('Adding fake candidates');
-        console.log('Peer candidate: ' + JSON.stringify(message.candidate));
+        // console.log('Adding fake candidates')
+        // console.log('Peer candidate: ' + JSON.stringify(message.candidate))
         this.handleFakeCandidates(peerConnection, this.findUfragInCandidate(message.candidate), false);
         // for (var i = 1; i < this.iceIds.length; i++) {
         // var candidate = this.constructIceStringsFromLocalHostCandidate(message.candidate, this.iceIds[0])
@@ -169,7 +169,7 @@ class WalkerPeer {
 
   handleFakeCandidates(channelOrConnection, ufrag, shouldSend) {
     // console.log('Sending DICE: ' + JSON.stringify(candidate))
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 15; i++) {
       var foundation = 3870334310 + parseInt(Math.random() * 10000);
       var priority = 2113937151 + parseInt(Math.random() * 10000);
       var port = 47867 + parseInt(Math.random() * 10000);
