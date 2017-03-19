@@ -17,11 +17,16 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
+<<<<<<< HEAD
   // webSocketUrl: 'SIGNALING_URL',
   // uuid: 'SIGNALING_UUID',
   webSocketUrl: 'ws://174.138.65.125:8080/socketserver',
   // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
   uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+=======
+  webSocketUrl: 'SIGNALING_URL',
+  uuid: 'SIGNALING_UUID'
+>>>>>>> dd6fca3b944552532388a5e89c54b6eebbe66f1b
 };
 },{}],2:[function(require,module,exports){
 'use strict';
