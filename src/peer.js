@@ -129,6 +129,7 @@ class Peer {
       }
 
       dataChannelReady.onclose = () => {
+        con.close()
         delete this._walkerConnections[[walkerId]]
       }
 
