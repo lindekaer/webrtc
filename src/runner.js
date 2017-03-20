@@ -115,6 +115,7 @@ function runContainer (currentNum, type, cb) {
 function startWalker (cb) {
   const child = spawn('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL])
   let numConnections = 0
+  let dataLines = []
   let durations = []
   let timeTotal = 0
   let timeMin = 0
@@ -122,26 +123,23 @@ function startWalker (cb) {
   let prevTime
   let duration
   child.stdout.on('data', function (data) {
-    const timestamps = []
-    let output = data.toString()
-    output = output.split('\n')
-    for (let i = 0; i < output.length; i++) {
-      if (output[i].indexOf('##LOG##') !== -1) {
-        timestamps.push(output[i])
+    console.log(data.toString())
+    const researchData = []
+    const output = data.toString()
+    const lines = output.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf('### LOG ###') !== -1) {
+        researchData.push(lines[i])
       }
     }
 
-    timestamps.forEach(line => {
-      line = line.split(' - ')
-      let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length))
+    researchData.forEach(line => {
+      var arr = line.split('### LOG ###')
+      var times = arr[1].split(',')
 
-      console.log('------------')
-      console.log('TIMESTAMP')
-      console.log(timestamp)
-      console.log('PREV')
-      console.log(prevTime)
-      console.log('------------')
-
+      let timestamp = times[0]
+      let timeSpentGatheringHost = times[1]
+      let timeSpentGatheringAll = times[2].substring(0, times[2].length - 1)
 
       if (prevTime) {
         duration = timestamp - prevTime
@@ -154,12 +152,16 @@ function startWalker (cb) {
 
         durations.push(duration)
 
+        dataLines.push(`${duration}, ${timeSpentGatheringHost}, ${timeSpentGatheringAll}`)
+
         timeTotal += duration
 
         numConnections++
 
         console.log(`Connection number: ${numConnections}`)
         console.log(`Duration: ${duration}`)
+        console.log(`Host gathering: ${timeSpentGatheringHost}`)
+        console.log(`ICE gathering: ${timeSpentGatheringAll}`)
       }
 
       prevTime = timestamp
@@ -181,7 +183,7 @@ function startWalker (cb) {
         console.log('')
         console.log(`Writing test results...`)
         let fileContent = ''
-        for (let d of durations) fileContent += `${d}\n`
+        for (let d of dataLines) fileContent += `${d}\n`
         fs.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
           console.log(`Appended results to ${colors.green.bold(OUTPUT_FILE_PATH)}!`)
           console.log('')
