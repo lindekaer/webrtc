@@ -34,6 +34,7 @@ const MODE = args['mode'] || 'full' // mode can be either 'full', 'spawn' or 'wa
 const DOCKER_IMAGE_ID = `webrtc/${DOCKER_NAME}`
 const ID = args['id']
 const FIRST_PEER = args['first-peer']
+const DELAY = args['delay']
 
 let OUTPUT_FILE
 let OUTPUT_FILE_PATH
@@ -66,6 +67,7 @@ if (MODE === 'spawn') {
 
 if (MODE === 'walker') {
   async.series([
+    DELAY ? delay : noop,
     createDockerImage,
     (cb) => { sleep(1000, cb) },
     startWalker
@@ -101,7 +103,7 @@ function runContainer (currentNum, type, cb) {
   const UUID = uuid.v1()
 
   // Spawn child process
-  const child = spawn('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID])
+  const child = spawn('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID])
   child.stdout.on('data', function (data) {
     console.log(data.toString())
     if (data.toString().indexOf('**NEXT**') !== -1) {
@@ -184,7 +186,7 @@ function startWalker (cb) {
             console.log(`Appended results to ${colors.green.bold(OUTPUT_FILE_PATH)}!`)
             console.log('')
             child.kill()
-            cb()
+            return cb()
           })
         }
       })
@@ -231,4 +233,8 @@ function calculateStandardDeviation (variance) {
 
 function noop (cb) {
   cb()
+}
+
+function delay (cb) {
+  setTimeout(cb, DELAY)
 }
