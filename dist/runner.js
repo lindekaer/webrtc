@@ -143,7 +143,7 @@ function startWalker(cb) {
   let prevTime;
   let duration;
   child.stdout.on('data', function (data) {
-    // console.log(data.toString())
+    console.log(data.toString());
     if (data.toString().indexOf('Connection established to') !== -1) {
       let output = data.toString();
       let lines = output.split('file');
