@@ -88,17 +88,14 @@ class Peer {
   init () {
     this._initializedCon = new RTCPeerConnection(config.iceConfig)
     this._recievedCon = new RTCPeerConnection(config.iceConfig)
-    this._readyCon = new RTCPeerConnection(config.iceConfig)
 
     this._initializedChannel
     this._recievedChannel
-    this._readyChannel
 
     this._readyOffer
 
     this.setupPeerConnection(this._initializedCon)
     this.setupPeerConnection(this._recievedCon)
-    this.setupPeerConnection(this._readyCon)
     // this.setupReadyCon()
     this.createOffer()
   }
@@ -133,6 +130,7 @@ class Peer {
         con.close()
         delete this._walkerConnections[[walkerId]]
         console.log('Remaining connections: ' + JSON.stringify(this._walkerConnections))
+        console.log('Remaining waiting connections: ' + JSON.stringify(this._connectionsAwaitingAnswer))
       }
 
       dataChannelReady.onopen = (event) => {

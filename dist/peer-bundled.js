@@ -123,17 +123,14 @@ class Peer {
   init() {
     this._initializedCon = new RTCPeerConnection(_config2.default.iceConfig);
     this._recievedCon = new RTCPeerConnection(_config2.default.iceConfig);
-    this._readyCon = new RTCPeerConnection(_config2.default.iceConfig);
 
     this._initializedChannel;
     this._recievedChannel;
-    this._readyChannel;
 
     this._readyOffer;
 
     this.setupPeerConnection(this._initializedCon);
     this.setupPeerConnection(this._recievedCon);
-    this.setupPeerConnection(this._readyCon);
     // this.setupReadyCon()
     this.createOffer();
   }
@@ -171,6 +168,7 @@ class Peer {
           con.close();
           delete _this._walkerConnections[[walkerId]];
           console.log('Remaining connections: ' + JSON.stringify(_this._walkerConnections));
+          console.log('Remaining waiting connections: ' + JSON.stringify(_this._connectionsAwaitingAnswer));
         };
 
         dataChannelReady.onopen = function (event) {
