@@ -100,6 +100,7 @@ class WalkerPeer {
         this.handleDataChannels(this._nextCon)
 
         this._nextCon.setRemoteDescription(offer, () => {
+          this._timeIceGatheringStart = Date.now()
           this._nextCon.createAnswer((answer) => {
             this._nextCon.setLocalDescription(answer)
           }, errorHandler)
@@ -107,6 +108,7 @@ class WalkerPeer {
         this._nextCon.onicecandidate = (candidate) => {
           // console.log('Got candidate event')
           if (candidate.candidate == null) {
+            this._timeIcegathering = Date.now() - this._timeIceGatheringStart
             var answer = JSON.stringify({
               type: 'walker-to-middle',
               payload: this._nextCon.localDescription,
