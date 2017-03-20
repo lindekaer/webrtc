@@ -143,12 +143,7 @@ class WalkerPeer {
         this._nodeCount++;
         // Log('Connection established to node ' + this._nodeCount)
         // Log(`##LOG## Connection established to node ${this._nodeCount}, iceTime: ${this._timeIceGathering}`)
-        console.log(`
-          ### LOG ###
-          TOTAL: ${Date.now()}
-          HOST: ${this._timeHostCandidate}
-          ICE: ${this._timeIceGathering}
-        `);
+        console.log(`### LOG ###${Date.now()},${this._timeHostCandidate},${this._timeIceGathering}`);
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
