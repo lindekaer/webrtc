@@ -17,11 +17,11 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  webSocketUrl: 'SIGNALING_URL',
-  uuid: 'SIGNALING_UUID'
-  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  // webSocketUrl: 'SIGNALING_URL',
+  // uuid: 'SIGNALING_UUID'
+  webSocketUrl: 'ws://192.168.1.134:8080/socketserver',
   // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -141,6 +141,7 @@ class WalkerPeer {
         this.handleDataChannels(this._nextCon);
 
         this._nextCon.setRemoteDescription(offer, () => {
+          this._timeIceGatheringStart = Date.now();
           this._nextCon.createAnswer(answer => {
             this._nextCon.setLocalDescription(answer);
           }, errorHandler);
@@ -148,6 +149,7 @@ class WalkerPeer {
         this._nextCon.onicecandidate = candidate => {
           // console.log('Got candidate event')
           if (candidate.candidate == null) {
+            this._timeIceGathering = Date.now() - this._timeIceGatheringStart;
             var answer = JSON.stringify({
               type: 'walker-to-middle',
               payload: this._nextCon.localDescription,
@@ -156,6 +158,8 @@ class WalkerPeer {
             // console.log('Sending answer to node ' + this._nodeCount)
             // console.log('Sending answer back: ' + answer)
             channel.send(answer);
+          } else {
+            this._timeHostCandidate = Date.now() - this._timeIceGatheringStart;
           }
         };
       };
@@ -164,7 +168,13 @@ class WalkerPeer {
         console.log('On open');
         this._nodeCount++;
         // Log('Connection established to node ' + this._nodeCount)
-        Log(`##LOG## Connection established to node ${this._nodeCount}`);
+        // Log(`##LOG## Connection established to node ${this._nodeCount}, iceTime: ${this._timeIceGathering}`)
+        console.log(`
+          ### LOG ###
+          TOTAL: ${Date.now()}
+          HOST: ${this._timeHostCandidate}
+          ICE: ${this._timeIceGathering}
+        `);
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid

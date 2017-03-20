@@ -108,7 +108,7 @@ class WalkerPeer {
         this._nextCon.onicecandidate = (candidate) => {
           // console.log('Got candidate event')
           if (candidate.candidate == null) {
-            this._timeIcegathering = Date.now() - this._timeIceGatheringStart
+            this._timeIceGathering = Date.now() - this._timeIceGatheringStart
             var answer = JSON.stringify({
               type: 'walker-to-middle',
               payload: this._nextCon.localDescription,
@@ -117,6 +117,8 @@ class WalkerPeer {
             // console.log('Sending answer to node ' + this._nodeCount)
             // console.log('Sending answer back: ' + answer)
             channel.send(answer)
+          } else {
+            this._timeHostCandidate = Date.now() - this._timeIceGatheringStart
           }
         }
       }
@@ -125,7 +127,13 @@ class WalkerPeer {
         console.log('On open')
         this._nodeCount++
         // Log('Connection established to node ' + this._nodeCount)
-        Log(`##LOG## Connection established to node ${this._nodeCount}`)
+        // Log(`##LOG## Connection established to node ${this._nodeCount}, iceTime: ${this._timeIceGathering}`)
+        console.log(`
+          ### LOG ###
+          TOTAL: ${Date.now()}
+          HOST: ${this._timeHostCandidate}
+          ICE: ${this._timeIceGathering}
+        `)
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
