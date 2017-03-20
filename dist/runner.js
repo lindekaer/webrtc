@@ -144,7 +144,6 @@ function startWalker(cb) {
   let prevTime;
   let duration;
   child.stdout.on('data', function (data) {
-    console.log(data.toString());
     const researchData = [];
     const output = data.toString();
     const lines = output.split('\n');
@@ -160,7 +159,8 @@ function startWalker(cb) {
 
       let timestamp = times[0];
       let timeSpentGatheringHost = times[1];
-      let timeSpentGatheringAll = times[2].substring(0, times[2].length - 1);
+      let timeSpentGatheringAll = times[2];
+      let timeSpentSetupPeerConnection = times[3].substring(0, times[3].length - 1);
 
       if (prevTime) {
         duration = timestamp - prevTime;
@@ -173,7 +173,7 @@ function startWalker(cb) {
 
         durations.push(duration);
 
-        dataLines.push(`${duration}, ${timeSpentGatheringHost}, ${timeSpentGatheringAll}`);
+        dataLines.push(`${duration}, ${timeSpentGatheringHost}, ${timeSpentGatheringAll}, ${timeSpentSetupPeerConnection}`);
 
         timeTotal += duration;
 
@@ -183,6 +183,9 @@ function startWalker(cb) {
         console.log(`Duration: ${duration}`);
         console.log(`Host gathering: ${timeSpentGatheringHost}`);
         console.log(`ICE gathering: ${timeSpentGatheringAll}`);
+        console.log(`Peer connection: ${timeSpentSetupPeerConnection}`);
+        console.log('------------------------------------');
+        console.log('');
       }
 
       prevTime = timestamp;
