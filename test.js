@@ -1,42 +1,20 @@
-// var argv = require('minimist')(process.argv.slice(2))
-// console.dir(argv)
 
-// var exec = require('ssh-exec')
-// var ip = '162.243.150.174'
+var str = `
+file:///app/walker.html 2723:10 "1490003879597 - ##LOG## Connection established to node 5"
+file:///app/walker.html 2843:18 "Closing connection"
+file:///app/walker.html 2805:16 "On message"
+file:///app/walker.html 2723:10 "1490003879111 - ##LOG## Connection established to node 6"
+file:///app/walker.html 2803:14 "On data channel"
+file:///app/walker.html 2834:16 "On open"
 
+`
 
-var minimist = require('minimist')
+var timestamps = []
+var output = str.split('\n')
+for (let i = 0; i < output.length; i++) {
+  if (output[i].indexOf('##LOG##') !== -1) {
+    timestamps.push(output[i])
+  }
+}
 
-const args = minimist(process.argv.slice(2))
-
-console.log(args['first-peer'])
-
-// var exec = require('child_process').exec
-
-// var command = `
-// echo "hey";
-// echo "yo";
-// echo "---";
-// ls
-// `
-
-// exec(command, (err, stdout, stderr) => {
-//   console.log(err)
-//   console.log(stdout)
-//   console.log(stderr)
-// })
-
-
-
-// exec('ssh-keyscan 162.243.150.174', (err, stdout, stderr) => {
-//   // console.log(err)
-//   var arr = stdout.split('\n')
-
-//   for (let line of arr) {
-//     if (line.indexOf(`${'162.243.150.174'} ecdsa-sha2-nistp256 `) !== -1) {
-//       console.log(line)
-//     }
-//   }
-
-//   // console.log(stderr)
-// })
+console.log(timestamps)

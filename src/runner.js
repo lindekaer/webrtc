@@ -122,75 +122,74 @@ function startWalker (cb) {
   let prevTime
   let duration
   child.stdout.on('data', function (data) {
-    console.log(data.toString())
-    if (data.toString().indexOf('Connection established to') !== -1) {
-      let output = data.toString()
-      let lines = output.split('file')
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].indexOf('Connection established to') === -1) {
-          lines.splice(i, 1)
-        }
+    const timestamps = []
+    let output = data.toString()
+    output = output.split('\n')
+    for (let i = 0; i < output.length; i++) {
+      if (output[i].indexOf('##LOG##') !== -1) {
+        timestamps.push(output[i])
       }
-      lines.forEach(line => {
-        line = line.split(' - ')
-        let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length))
-
-        console.log('------------')
-        console.log('TIMESTAMP')
-        console.log(timestamp)
-        console.log('PREV')
-        console.log(prevTime)
-        console.log('------------')
-
-
-        if (prevTime) {
-          duration = timestamp - prevTime
-
-          if (timeMin === 0) timeMin = duration
-          if (timeMax === 0) timeMax = duration
-
-          if (duration < timeMin) timeMin = duration
-          if (duration > timeMax) timeMax = duration
-
-          durations.push(duration)
-
-          timeTotal += duration
-
-          numConnections++
-
-          console.log(`Connection number: ${numConnections}`)
-          console.log(`Duration: ${duration}`)
-        }
-
-        prevTime = timestamp
-
-        if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
-          const mean = calculateMean(timeTotal, numConnections)
-          const variance = calculateVariance(durations, mean)
-          const standardDeviation = calculateStandardDeviation(variance)
-
-          console.log('')
-          console.log('-------- ⚡️  Test completed ⚡️ --------')
-          console.log('')
-          console.log(`Number of connection handovers: ${colors.yellow.bold(numConnections)}`)
-          console.log(`Min (fastest handover):         ${colors.yellow.bold(timeMin.toFixed(2) + ' ms')}`)
-          console.log(`Max (slowest handover):         ${colors.yellow.bold(timeMax.toFixed(2) + ' ms')}`)
-          console.log(`Mean:                           ${colors.green.bold.underline(`${mean.toFixed(2)}`)}`)
-          console.log(`Variance:                       ${colors.green.bold.underline(`${variance.toFixed(2)}`)}`)
-          console.log(`Standard deviation:             ${colors.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`)
-          console.log('')
-          console.log(`Writing test results...`)
-          let fileContent = ''
-          for (let d of durations) fileContent += `${d}\n`
-          fs.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
-            console.log(`Appended results to ${colors.green.bold(OUTPUT_FILE_PATH)}!`)
-            console.log('')
-            child.kill()
-            return cb()
-          })
-        }
-      })
     }
+
+    timestamps.forEach(line => {
+      line = line.split(' - ')
+      let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length))
+
+      console.log('------------')
+      console.log('TIMESTAMP')
+      console.log(timestamp)
+      console.log('PREV')
+      console.log(prevTime)
+      console.log('------------')
+
+
+      if (prevTime) {
+        duration = timestamp - prevTime
+
+        if (timeMin === 0) timeMin = duration
+        if (timeMax === 0) timeMax = duration
+
+        if (duration < timeMin) timeMin = duration
+        if (duration > timeMax) timeMax = duration
+
+        durations.push(duration)
+
+        timeTotal += duration
+
+        numConnections++
+
+        console.log(`Connection number: ${numConnections}`)
+        console.log(`Duration: ${duration}`)
+      }
+
+      prevTime = timestamp
+
+      if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
+        const mean = calculateMean(timeTotal, numConnections)
+        const variance = calculateVariance(durations, mean)
+        const standardDeviation = calculateStandardDeviation(variance)
+
+        console.log('')
+        console.log('-------- ⚡️  Test completed ⚡️ --------')
+        console.log('')
+        console.log(`Number of connection handovers: ${colors.yellow.bold(numConnections)}`)
+        console.log(`Min (fastest handover):         ${colors.yellow.bold(timeMin.toFixed(2) + ' ms')}`)
+        console.log(`Max (slowest handover):         ${colors.yellow.bold(timeMax.toFixed(2) + ' ms')}`)
+        console.log(`Mean:                           ${colors.green.bold.underline(`${mean.toFixed(2)}`)}`)
+        console.log(`Variance:                       ${colors.green.bold.underline(`${variance.toFixed(2)}`)}`)
+        console.log(`Standard deviation:             ${colors.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`)
+        console.log('')
+        console.log(`Writing test results...`)
+        let fileContent = ''
+        for (let d of durations) fileContent += `${d}\n`
+        fs.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
+          console.log(`Appended results to ${colors.green.bold(OUTPUT_FILE_PATH)}!`)
+          console.log('')
+          child.kill()
+          return cb()
+        })
+      }
+    })
   })
 }
 
