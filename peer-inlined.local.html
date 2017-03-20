@@ -2689,11 +2689,11 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
-  // uuid: 'SIGNALING_UUID'
-  webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
+  webSocketUrl: 'ws://192.168.8.106:8080/socketserver',
+  uuid: 'SIGNALING_UUID'
+  // webSocketUrl: 'ws://192.168.1.242:8080/socketserver',
   // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -2990,7 +2990,7 @@ class Peer {
         // channel.send(this._waitingOffer)
         break;
       case 'close':
-        console.log('Closing channel');
+        // console.log('Closing channel')
         channel.close();
         break;
       case 'request-offer-for-walker':

@@ -292,7 +292,7 @@ class Peer {
         // channel.send(this._waitingOffer)
         break;
       case 'close':
-        console.log('Closing channel');
+        // console.log('Closing channel')
         channel.close();
         break;
       case 'request-offer-for-walker':
