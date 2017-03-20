@@ -68,7 +68,9 @@ class WalkerPeer {
         peerConnection.onicecandidate = (event) => {
           if (event.candidate == null) {
             // TODO: Send end of candidates event
+            this._timeIceGathering = Date.now() - this._timeIceGatheringStart
           } else {
+            this._timeHostCandidate = Date.now() - this._timeIceGatheringStart
             if (event.candidate) {
               const jsonOffer = JSON.stringify({
                 type: 'ice-candidate-for-peer-relay',
@@ -79,6 +81,7 @@ class WalkerPeer {
             }
           }
         }
+        this._timeIceGatheringStart = Date.now()
         peerConnection.createAnswer((answer) => {
           peerConnection.setLocalDescription(answer)
           channel.send(JSON.stringify({
@@ -96,6 +99,13 @@ class WalkerPeer {
 
 // 'walker-request-answer'
   handleDataChannels (peerConnection) {
+    peerConnection.oniceconnectionstatechange = (event) => {
+      // console.log('ICE state ' + JSON.stringify(event))
+      console.log('ICE connection state changed to: ' + peerConnection.iceConnectionState)
+      if (peerConnection.iceConnectionState === 'connected') {
+        this._timeConnectingPeer = Date.now() - this._timeInitEF
+      }
+    }
     peerConnection.ondatachannel = (event) => {
       const channel = event.channel
 
@@ -108,7 +118,7 @@ class WalkerPeer {
         this._currentCon = this._nextCon
         this._nextCon = new window.RTCPeerConnection(config.iceConfig)
         this._nodeCount++
-        console.log(`Connection established to node ${this._nodeCount}, took: ${JSON.stringify(Date.now() - this._requestTimeSend)} ms`)
+        console.log(`### LOG ###${Date.now()},${this._timeHostCandidate},${this._timeIceGathering},${this._timeConnectingPeer}`)
         this._requestTimeSend = Date.now()
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
