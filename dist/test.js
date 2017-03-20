@@ -1,12 +1,15 @@
 'use strict';
 
-var _wrtc = require('wrtc');
+/*
+-----------------------------------------------------------------------------------
+|
+| Imports
+|
+-----------------------------------------------------------------------------------
+*/
 
-var _sdpTransform = require('sdp-transform');
-
-var _sdpTransform2 = _interopRequireDefault(_sdpTransform);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+// import { RTCPeerConnection } from 'wrtc'
+// import transform from 'sdp-transform'
 
 /*
 -----------------------------------------------------------------------------------
@@ -17,15 +20,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 */
 
 // Setup of P2P connection and data channel
-/*
------------------------------------------------------------------------------------
-|
-| Imports
-|
------------------------------------------------------------------------------------
-*/
-
-const pc1 = new _wrtc.RTCPeerConnection();
+const pc1 = new RTCPeerConnection();
 const dc = pc1.createDataChannel();
 
 // Add event handlers on data channel
@@ -42,18 +37,19 @@ var errorHandler = function (err) {
 var options = {};
 
 // Create an offer with the specified options
+const startTime = Date.now();
 pc1.createOffer(offer => {
   // Set the offer as the local description
   pc1.setLocalDescription(offer, () => {
-    console.log(offer.sdp);
-    console.log(JSON.stringify(_sdpTransform2.default.parse(offer.sdp), null, 2));
-    console.log('Peer 1: Setting local description');
+    // console.log(offer.sdp)
+    // console.log(JSON.stringify(transform.parse(offer.sdp), null, 2))
+    // console.log('Peer 1: Setting local description')
   }, errorHandler);
 }, errorHandler, options);
 
 // Event handler for candidates
 pc1.onicecandidate = event => {
-  console.log('Peer 1: Found an ICE candidate!');
+  // console.log('Peer 1: Found an ICE candidate!')
   // This fires when no more candidates are to be found
   if (event.candidate === null) {
     // Send offer to Peer2
@@ -70,7 +66,7 @@ pc1.onicecandidate = event => {
 */
 
 // Setup of P2P connection
-const pc2 = new _wrtc.RTCPeerConnection();
+const pc2 = new RTCPeerConnection();
 
 function sendOffer(offer) {
   // Set the offer from Peer1 as remote description
@@ -96,5 +92,6 @@ function sendAnswer(answer) {
 }
 
 pc2.ondatachannel = event => {
+  console.log(`Time: ${Date.now() - startTime}`);
   event.channel.send('The zebra is superior at playing the violin, word.');
 };

@@ -17,11 +17,11 @@ exports.default = {
       OfferToReceiveVideo: false
     }
   },
-  // webSocketUrl: 'SIGNALING_URL',
-  // uuid: 'SIGNALING_UUID'
-  webSocketUrl: 'ws://192.168.1.134:8080/socketserver',
+  webSocketUrl: 'SIGNALING_URL',
+  uuid: 'SIGNALING_UUID'
+  // webSocketUrl: 'ws://192.168.1.134:8080/socketserver',
   // webSocketUrl: 'ws://174.138.65.125:8080/socketserver'
-  uuid: Math.random() > 0.5 ? 'meep' : 'beans'
+  // uuid: Math.random() > 0.5 ? 'meep' : 'beans'
 };
 },{}],2:[function(require,module,exports){
 'use strict';
@@ -127,6 +127,17 @@ class WalkerPeer {
   }
 
   handleDataChannels(peerConnection) {
+    peerConnection.onconnectionstatechange = event => {
+      console.log('state ' + JSON.stringify(event));
+      console.log('Connection state changed to: ' + peerConnection.connectionState);
+    };
+    peerConnection.oniceconnectionstatechange = event => {
+      // console.log('ICE state ' + JSON.stringify(event))
+      console.log('ICE connection state changed to: ' + peerConnection.iceConnectionState);
+      if (peerConnection.iceConnectionState === 'connected') {
+        this._timeConnectingPeer = Date.now() - this._timeInitEF;
+      }
+    };
     peerConnection.ondatachannel = event => {
       const channel = event.channel;
       this._nextChannel = channel;
@@ -169,7 +180,8 @@ class WalkerPeer {
         this._nodeCount++;
         // Log('Connection established to node ' + this._nodeCount)
         // Log(`##LOG## Connection established to node ${this._nodeCount}, iceTime: ${this._timeIceGathering}`)
-        console.log(`### LOG ###${Date.now()},${this._timeHostCandidate},${this._timeIceGathering}`);
+        console.log(`### LOG ###${Date.now()},${this._timeHostCandidate},${this._timeIceGathering},${this._timeConnectingPeer}`);
+        this._timeInitEF = Date.now();
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid

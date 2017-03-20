@@ -6,8 +6,8 @@
 -----------------------------------------------------------------------------------
 */
 
-import { RTCPeerConnection } from 'wrtc'
-import transform from 'sdp-transform'
+// import { RTCPeerConnection } from 'wrtc'
+// import transform from 'sdp-transform'
 
 /*
 -----------------------------------------------------------------------------------
@@ -32,23 +32,22 @@ var errorHandler = function (err) {
   console.error(err)
 }
 
-var options = {
-  
-}
+var options = {}
 
 // Create an offer with the specified options
+const startTime = Date.now()
 pc1.createOffer((offer) => {
   // Set the offer as the local description
   pc1.setLocalDescription(offer, () => {
-    console.log(offer.sdp)
-    console.log(JSON.stringify(transform.parse(offer.sdp), null, 2))
-    console.log('Peer 1: Setting local description')
+    // console.log(offer.sdp)
+    // console.log(JSON.stringify(transform.parse(offer.sdp), null, 2))
+    // console.log('Peer 1: Setting local description')
   }, errorHandler)
 }, errorHandler, options)
 
 // Event handler for candidates
 pc1.onicecandidate = (event) => {
-  console.log('Peer 1: Found an ICE candidate!')
+  // console.log('Peer 1: Found an ICE candidate!')
   // This fires when no more candidates are to be found
   if (event.candidate === null) {
     // Send offer to Peer2
@@ -92,5 +91,6 @@ function sendAnswer (answer) {
 }
 
 pc2.ondatachannel = (event) => {
+  console.log(`Time: ${Date.now() - startTime}`)
   event.channel.send('The zebra is superior at playing the violin, word.')
 }
