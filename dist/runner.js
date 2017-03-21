@@ -49,15 +49,25 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 */
 
 const args = (0, _minimist2.default)(process.argv.slice(2));
+const DOCKER_NAME = _uuid2.default.v1();
 
 const NUM_CONTAINERS = args['num-containers'] || 10;
 const NUM_PEERS = args['num-peers'] || 20;
 const SIGNALING_URL = args['signaling-url'] || 'ws://178.62.51.86:8080/socketserver';
-const TIMEOUT = args['timeout'] || (0, _ms2.default)('5m');
+const TIMEOUT = args['timeout'] || (0, _ms2.default)('10000m');
 const MODE = args['mode'] || 'full'; // mode can be either 'full', 'spawn' or 'walker'
-const DOCKER_IMAGE_ID = `webrtc/${_uuid2.default.v1()}`;
+const DOCKER_IMAGE_ID = `webrtc/${DOCKER_NAME}`;
 const ID = args['id'];
 const FIRST_PEER = args['first-peer'];
+const DELAY = args['delay'];
+
+let OUTPUT_FILE;
+let OUTPUT_FILE_PATH;
+
+if (MODE === 'walker') {
+  OUTPUT_FILE = args['output-file'];
+  OUTPUT_FILE_PATH = _path2.default.join(__dirname, '..', 'data', OUTPUT_FILE);
+}
 
 if (MODE === 'full') {
   _async2.default.series([createDockerImage, createBootPeer, cb => {
@@ -80,8 +90,8 @@ if (MODE === 'spawn') {
 }
 
 if (MODE === 'walker') {
-  _async2.default.series([createDockerImage, cb => {
-    sleep(5000, cb);
+  _async2.default.series([DELAY ? delay : noop, createDockerImage, cb => {
+    sleep(1000, cb);
   }, startWalker], clean);
 }
 
@@ -101,7 +111,7 @@ function createDockerImage(cb) {
 function createBootPeer(cb) {
   console.log('Launching a boot peer...');
   const UUID = _uuid2.default.v1();
-  (0, _child_process.spawn)('docker', ['run', '-P', '--network=host', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID]);
+  (0, _child_process.spawn)('docker', ['run', '-P', '--net=host', '--rm', DOCKER_IMAGE_ID, 'test', 'peer', SIGNALING_URL, 1, UUID]);
   setTimeout(cb, 5000);
 }
 
@@ -114,7 +124,7 @@ function runContainer(currentNum, type, cb) {
   const UUID = _uuid2.default.v1();
 
   // Spawn child process
-  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--network=host', '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID]);
+  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', type, SIGNALING_URL, NUM_PEERS, UUID]);
   child.stdout.on('data', function (data) {
     console.log(data.toString());
     if (data.toString().indexOf('**NEXT**') !== -1) {
@@ -124,8 +134,9 @@ function runContainer(currentNum, type, cb) {
 }
 
 function startWalker(cb) {
-  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--network=host', '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
+  const child = (0, _child_process.spawn)('docker', ['run', '-P', '--net=host', '--name', DOCKER_NAME, '--rm', DOCKER_IMAGE_ID, 'test', 'walker', SIGNALING_URL]);
   let numConnections = 0;
+  let dataLines = [];
   let durations = [];
   let timeTotal = 0;
   let timeMin = 0;
@@ -134,77 +145,85 @@ function startWalker(cb) {
   let duration;
   child.stdout.on('data', function (data) {
     console.log(data.toString());
-    if (data.toString().indexOf('Connection established to') !== -1) {
-      let output = data.toString();
-      let lines = output.split('file');
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].indexOf('Connection established to') === -1) {
-          lines.splice(i, 1);
-        }
+    const researchData = [];
+    const output = data.toString();
+    const lines = output.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf('### LOG ###') !== -1) {
+        researchData.push(lines[i]);
       }
-      lines.forEach(line => {
-        line = line.split(' - ');
-        let timestamp = parseInt(line[0].substring(line[0].lastIndexOf('"') + 1, line[0].length));
-
-        console.log('------------');
-        console.log('TIMESTAMP');
-        console.log(timestamp);
-        console.log('PREV');
-        console.log(prevTime);
-        console.log('------------');
-
-        if (prevTime) {
-          duration = timestamp - prevTime;
-
-          if (timeMin === 0) timeMin = duration;
-          if (timeMax === 0) timeMax = duration;
-
-          if (duration < timeMin) timeMin = duration;
-          if (duration > timeMax) timeMax = duration;
-
-          durations.push(duration);
-          _fs2.default.appendFile(_path2.default.join(__dirname, '..', 'data', `${ID}_${NUM_PEERS * 2}_results.data`), duration, () => {});
-
-          timeTotal += duration;
-
-          numConnections++;
-
-          console.log(`Connection number: ${numConnections}`);
-          console.log(`Duration: ${duration}`);
-        }
-
-        prevTime = timestamp;
-
-        if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
-          const mean = calculateMean(timeTotal, numConnections);
-          const variance = calculateVariance(durations, mean);
-          const standardDeviation = calculateStandardDeviation(variance);
-
-          console.log('');
-          console.log('-------- ⚡️  Test completed ⚡️ --------');
-          console.log('');
-          console.log(`Number of connection handovers: ${_colors2.default.yellow.bold(numConnections)}`);
-          console.log(`Min (fastest handover):         ${_colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms')}`);
-          console.log(`Max (slowest handover):         ${_colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms')}`);
-          console.log(`Mean:                           ${_colors2.default.green.bold.underline(`${mean.toFixed(2)}`)}`);
-          console.log(`Variance:                       ${_colors2.default.green.bold.underline(`${variance.toFixed(2)}`)}`);
-          console.log(`Standard deviation:             ${_colors2.default.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`);
-          console.log('');
-
-          console.log('DATA:');
-          console.log(JSON.stringify(durations, null, 2));
-
-          child.kill();
-          cb();
-        }
-      });
     }
+
+    researchData.forEach(line => {
+      var arr = line.split('### LOG ###');
+      var times = arr[1].split(',');
+
+      let timestamp = times[0];
+      let timeSpentGatheringHost = times[1];
+      let timeSpentGatheringAll = times[2];
+      let timeSpentSetupPeerConnection = times[3].substring(0, times[3].length - 1);
+
+      if (prevTime) {
+        duration = timestamp - prevTime;
+
+        if (timeMin === 0) timeMin = duration;
+        if (timeMax === 0) timeMax = duration;
+
+        if (duration < timeMin) timeMin = duration;
+        if (duration > timeMax) timeMax = duration;
+
+        durations.push(duration);
+
+        dataLines.push(`${duration}, ${timeSpentGatheringHost}, ${timeSpentGatheringAll}, ${timeSpentSetupPeerConnection}`);
+
+        timeTotal += duration;
+
+        numConnections++;
+
+        console.log(`Connection number: ${numConnections}`);
+        console.log(`Duration: ${duration}`);
+        console.log(`Host gathering: ${timeSpentGatheringHost}`);
+        console.log(`ICE gathering: ${timeSpentGatheringAll}`);
+        console.log(`Peer connection: ${timeSpentSetupPeerConnection}`);
+        console.log('------------------------------------');
+        console.log('');
+      }
+
+      prevTime = timestamp;
+
+      if (durations.length === NUM_PEERS * NUM_CONTAINERS) {
+        const mean = calculateMean(timeTotal, numConnections);
+        const variance = calculateVariance(durations, mean);
+        const standardDeviation = calculateStandardDeviation(variance);
+
+        console.log('');
+        console.log('-------- ⚡️  Test completed ⚡️ --------');
+        console.log('');
+        console.log(`Number of connection handovers: ${_colors2.default.yellow.bold(numConnections)}`);
+        console.log(`Min (fastest handover):         ${_colors2.default.yellow.bold(timeMin.toFixed(2) + ' ms')}`);
+        console.log(`Max (slowest handover):         ${_colors2.default.yellow.bold(timeMax.toFixed(2) + ' ms')}`);
+        console.log(`Mean:                           ${_colors2.default.green.bold.underline(`${mean.toFixed(2)}`)}`);
+        console.log(`Variance:                       ${_colors2.default.green.bold.underline(`${variance.toFixed(2)}`)}`);
+        console.log(`Standard deviation:             ${_colors2.default.green.bold.underline(`${standardDeviation.toFixed(2)}`)}`);
+        console.log('');
+        console.log(`Writing test results...`);
+        let fileContent = '';
+        for (let d of dataLines) fileContent += `${d}\n`;
+        _fs2.default.appendFile(OUTPUT_FILE_PATH, fileContent, { encoding: 'utf-8' }, () => {
+          console.log(`Appended results to ${_colors2.default.green.bold(OUTPUT_FILE_PATH)}!`);
+          console.log('');
+          child.kill();
+          return cb();
+        });
+      }
+    });
   });
 }
 
 function clean() {
-  (0, _child_process.exec)(`${_path2.default.join(__dirname, '..', 'clean.sh')} ${DOCKER_IMAGE_ID}`, (err, stdout, stderr) => {
+  (0, _child_process.exec)(`${_path2.default.join(__dirname, '..', 'clean.sh')} ${DOCKER_NAME}`, (err, stdout, stderr) => {
     console.log('Cleanup completed');
+    process.exit();
   });
 }
 
@@ -239,4 +258,8 @@ function calculateStandardDeviation(variance) {
 
 function noop(cb) {
   cb();
+}
+
+function delay(cb) {
+  setTimeout(cb, DELAY);
 }
