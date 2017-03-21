@@ -110,7 +110,7 @@ class WalkerPeer {
   handleDataChannels(peerConnection) {
     peerConnection.oniceconnectionstatechange = event => {
       // console.log('ICE state ' + JSON.stringify(event))
-      console.log('ICE connection state changed to: ' + peerConnection.iceConnectionState);
+      // console.log('ICE connection state changed to: ' + peerConnection.iceConnectionState)
       if (peerConnection.iceConnectionState === 'connected') {
         this._timeConnectingPeer = Date.now() - this._timeInitEF;
       }
@@ -129,6 +129,7 @@ class WalkerPeer {
         this._nodeCount++;
         console.log(`### LOG ###${Date.now()},${this._timeHostCandidate},${this._timeIceGathering},${this._timeConnectingPeer}`);
         this._requestTimeSend = Date.now();
+        this._timeInitEF = Date.now();
         channel.send(JSON.stringify({
           type: 'get-offer-from-next-peer',
           walkerId: this._uuid
